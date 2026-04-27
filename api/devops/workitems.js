@@ -24,6 +24,13 @@ export default async function handler(req, res) {
       .trim();
   }
 
+  function normalizeText(value = "") {
+    return stripHtml(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
   function extractRequester(text = "") {
     const clean = stripHtml(text);
 
@@ -45,6 +52,34 @@ export default async function handler(req, res) {
     }
 
     return null;
+  }
+
+  function detectHelpdesk({ parentId, areaPath, tags, title, description, reproSteps }) {
+    if (parentId === helpDeskParentId) return true;
+
+    const source = normalizeText([
+      areaPath,
+      tags,
+      title,
+      description,
+      reproSteps
+    ].join(" "));
+
+    const helpdeskSignals = [
+      "helpdesk",
+      "power apps",
+      "powerapps",
+      "pozadavek",
+      "zadavatel",
+      "zadano z powerapps",
+      "power automate",
+      "flow",
+      "b2c",
+      "navi",
+      "navision"
+    ];
+
+    return helpdeskSignals.some(signal => source.includes(signal));
   }
 
   try {
@@ -150,8 +185,6 @@ export default async function handler(req, res) {
           ? Number(f["System.Parent"])
           : null;
 
-      const isHelpdesk = parentId === helpDeskParentId;
-
       const assignedTo =
         f["System.AssignedTo"]?.displayName ||
         f["System.AssignedTo"]?.uniqueName ||
@@ -172,6 +205,19 @@ export default async function handler(req, res) {
         extractRequester(reproStepsRaw) ||
         null;
 
+      const title = f["System.Title"] || "";
+      const areaPath = f["System.AreaPath"] || "";
+      const tags = f["System.Tags"] || "";
+
+      const isHelpdesk = detectHelpdesk({
+        parentId,
+        areaPath,
+        tags,
+        title,
+        description,
+        reproSteps
+      });
+
       const closedDate = f["Microsoft.VSTS.Common.ClosedDate"] || null;
       const createdDate = f["System.CreatedDate"] || null;
       const originalEstimate = f["Microsoft.VSTS.Scheduling.OriginalEstimate"];
@@ -186,7 +232,7 @@ export default async function handler(req, res) {
         parentId,
         isHelpdesk,
 
-        title: f["System.Title"] || "",
+        title,
         state: f["System.State"] || "",
         type: f["System.WorkItemType"] || "",
 
@@ -201,7 +247,7 @@ export default async function handler(req, res) {
         author: requester,
 
         priority: f["Microsoft.VSTS.Common.Priority"] || null,
-        tags: f["System.Tags"] || "",
+        tags,
 
         description,
         reproSteps,
@@ -215,7 +261,7 @@ export default async function handler(req, res) {
         helpdeskResolvedDate: isHelpdesk ? closedDate : null,
 
         iterationPath: f["System.IterationPath"] || "",
-        areaPath: f["System.AreaPath"] || "",
+        areaPath,
 
         originalEstimate: originalEstimate ?? null,
         completedWork: completedWork ?? 0,
@@ -245,8 +291,10 @@ export default async function handler(req, res) {
         loadedIds: ids.length,
         containsTicket1983: workItems.some(item => item.id === 1983),
         containsTicket1984: workItems.some(item => item.id === 1984),
+        containsTicket1986: workItems.some(item => item.id === 1986),
         ticket1983: workItems.find(item => item.id === 1983) || null,
         ticket1984: workItems.find(item => item.id === 1984) || null,
+        ticket1986: workItems.find(item => item.id === 1986) || null,
         helpdeskCount: helpdesk.length,
         planningCount: planningItems.length,
       },
