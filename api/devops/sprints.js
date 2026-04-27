@@ -1,4 +1,6 @@
+import { requireAuth } from '../_auth.js';
 export default async function handler(req, res) {
+    if (!requireAuth(req, res)) return;
   const pat = process.env.AZURE_DEVOPS_PAT;
   const org = process.env.AZURE_DEVOPS_ORG;
   const project = process.env.AZURE_DEVOPS_PROJECT;
