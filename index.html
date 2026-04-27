@@ -178,7 +178,16 @@ function link(id){return `<a target="_blank" href="https://dev.azure.com/GradaBo
 function badgeState(s){const c=s==="Closed"||s==="Resolved"?"b-green":s==="Active"?"b-yellow":s==="New"?"b-gray":"b-blue";return `<span class="badge ${c}">${s||"--"}</span>`;}
 function badgeCategory(isHelpdesk){return isHelpdesk?`<span class="badge b-blue">Helpdesk</span>`:`<span class="badge b-orange">Plán</span>`;}
 
-function requester(x){return x.createdBy||x.createdByName||x.requester||x.requestedBy||x.author||"Neznámý zadavatel";}
+function requester(x){
+  return (
+    x.requester ||
+    x.requestedBy ||
+    x.author ||
+    x.parsedRequester ||
+    "Neznámý zadavatel"
+  );
+}
+
 function areaShort(x){return (x.areaPath||"Bez oblasti").split("\\").pop()||"Bez oblasti";}
 function agenda(x){
   const src=((x.tags||"")+" "+(x.areaPath||"")+" "+(x.title||"")).toLowerCase();
