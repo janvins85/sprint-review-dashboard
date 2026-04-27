@@ -17,10 +17,13 @@ export default async function handler(req, res) {
     return String(value)
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/p>/gi, "\n")
+      .replace(/<\/div>/gi, "\n")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;/g, " ")
       .replace(/&amp;/g, "&")
-      .replace(/\s+/g, " ")
+      .replace(/\r/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s+/g, "\n")
       .trim();
   }
 
@@ -31,24 +34,57 @@ export default async function handler(req, res) {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
+  function cleanPersonName(value = "") {
+    return String(value)
+      .replace(/\s+/g, " ")
+      .replace(/^[\s:–—-]+/, "")
+      .replace(/[\s.;,]+$/, "")
+      .trim()
+      .slice(0, 120);
+  }
+
   function extractRequester(text = "") {
     const clean = stripHtml(text);
+    const lines = clean
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
 
     const patterns = [
-      /zadavatel\s*[:\-]\s*([^;\n\r]+)/i,
-      /žadatel\s*[:\-]\s*([^;\n\r]+)/i,
-      /zadáno\s*od\s*[:\-]?\s*([^;\n\r]+)/i,
-      /requested\s*by\s*[:\-]\s*([^;\n\r]+)/i,
-      /requester\s*[:\-]\s*([^;\n\r]+)/i,
-      /autor\s*[:\-]\s*([^;\n\r]+)/i,
-      /created\s*by\s*[:\-]\s*([^;\n\r]+)/i
+      /vytvořil\s*[:\-]\s*([^\n\r;]+)/i,
+      /vytvoril\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadavatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /žadatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadáno\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
+      /zadano\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
+      /requested\s*by\s*[:\-]\s*([^\n\r;]+)/i,
+      /requester\s*[:\-]\s*([^\n\r;]+)/i,
+      /autor\s*[:\-]\s*([^\n\r;]+)/i,
+      /created\s*by\s*[:\-]\s*([^\n\r;]+)/i
     ];
+
+    for (const line of lines) {
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match && match[1]) {
+          const person = cleanPersonName(match[1]);
+          if (person) return person;
+        }
+      }
+    }
 
     for (const pattern of patterns) {
       const match = clean.match(pattern);
       if (match && match[1]) {
-        return match[1].trim().slice(0, 120);
+        const person = cleanPersonName(match[1]);
+        if (person) return person;
       }
+    }
+
+    const lastLine = lines[lines.length - 1] || "";
+    if (/^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{2,5}$/i.test(lastLine)) {
+      return lastLine;
     }
 
     return null;
@@ -71,12 +107,10 @@ export default async function handler(req, res) {
       "powerapps",
       "pozadavek",
       "zadavatel",
+      "vytvoril",
       "zadano z powerapps",
       "power automate",
-      "flow",
-      "b2c",
-      "navi",
-      "navision"
+      "flow"
     ];
 
     return helpdeskSignals.some(signal => source.includes(signal));
@@ -200,10 +234,14 @@ export default async function handler(req, res) {
       const description = stripHtml(descriptionRaw);
       const reproSteps = stripHtml(reproStepsRaw);
 
-      const requester =
-        extractRequester(descriptionRaw) ||
+      const parsedRequester =
         extractRequester(reproStepsRaw) ||
-        null;
+        extractRequester(descriptionRaw);
+
+      const requester =
+        parsedRequester ||
+        createdBy ||
+        "Neznámý zadavatel";
 
       const title = f["System.Title"] || "";
       const areaPath = f["System.AreaPath"] || "";
@@ -242,9 +280,11 @@ export default async function handler(req, res) {
 
         createdBy,
         createdByName: createdBy,
+
         requester,
         requestedBy: requester,
         author: requester,
+        parsedRequester,
 
         priority: f["Microsoft.VSTS.Common.Priority"] || null,
         tags,
