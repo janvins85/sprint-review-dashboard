@@ -1,11 +1,6 @@
 /**
  * DataSource wrapper pro Sprint Review Dashboard
  * Frontend volá pouze vlastní Vercel endpointy /api/...
- *
- * Pravidla:
- * - Helpdesk = parentId 1513 / isHelpdesk = true.
- * - Vše ostatní = ručně založené / plánovací DevOps tickety.
- * - Výchozí zobrazení = aktuální sprint podle dnešního data v názvu sprintu.
  */
 
 const DataSource = {
@@ -70,6 +65,7 @@ const DataSource = {
 
   normalizeWorkItem(item) {
     const id = Number(item.id || item.devopsId);
+
     const parentId =
       item.parentId !== undefined && item.parentId !== null
         ? Number(item.parentId)
@@ -77,13 +73,28 @@ const DataSource = {
 
     const isHelpdesk =
       item.isHelpdesk === true ||
-      parentId === 1513;
+      parentId === 1513 ||
+      String(item.areaPath || "").toLowerCase().includes("helpdesk");
 
     const assignee =
       item.assignee ||
       item.assignedTo ||
       item.owner ||
       "Nepřiřazeno";
+
+    const requester =
+      item.requester ||
+      item.requestedBy ||
+      item.author ||
+      item.parsedRequester ||
+      item.createdByName ||
+      item.createdBy ||
+      "Neznámý zadavatel";
+
+    const createdBy =
+      item.createdBy ||
+      item.createdByName ||
+      null;
 
     const closedDate =
       item.closedDate ||
@@ -110,6 +121,14 @@ const DataSource = {
       assignedTo: assignee,
       owner: item.owner || assignee,
 
+      requester,
+      requestedBy: requester,
+      author: requester,
+      parsedRequester: item.parsedRequester || null,
+
+      createdBy,
+      createdByName: createdBy,
+
       createdDate: item.createdDate || null,
       changedDate: item.changedDate || null,
       closedDate,
@@ -122,6 +141,9 @@ const DataSource = {
       areaPath: item.areaPath || "",
       priority: item.priority || null,
       tags: item.tags || "",
+
+      description: item.description || "",
+      reproSteps: item.reproSteps || "",
 
       estimatedHours:
         item.estimatedHours ??
@@ -166,6 +188,9 @@ const DataSource = {
       priority: x.priority,
       status: x.state,
       owner: x.assignee,
+      requester: x.requester,
+      requestedBy: x.requester,
+      author: x.requester,
       createdDate: x.createdDate,
       resolvedDate: x.closedDate,
       closedDate: x.closedDate,
@@ -320,6 +345,8 @@ const DataSource = {
         currentSprint: currentSprint.name,
         contains1983: allWorkItems.some(item => item.id === 1983),
         contains1984: allWorkItems.some(item => item.id === 1984),
+        contains1986: allWorkItems.some(item => item.id === 1986),
+        contains1987: allWorkItems.some(item => item.id === 1987),
       },
     };
   },
