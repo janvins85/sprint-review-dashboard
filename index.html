@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint Review Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+<script src="config.js"></script>
+<script src="data/mock.js"></script>
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #1a1d27;
+  --bg3: #242736;
+  --border: #2d3149;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --accent: #3b82f6;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.header { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+.header-left h1 { font-size: 1.8rem; font-weight: 700; color: #fff; }
+.header-left p { color: #bfdbfe; font-size: 0.9rem; margin-top: 4px; }
+.header-right { text-align: right; }
+.header-right .sprint-name { font-size: 1.1rem; font-weight: 600; color: #fff; }
+.header-right .sprint-dates { color: #bfdbfe; font-size: 0.85rem; }
+.sprint-selector { padding: 12px 32px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+.sprint-selector label { color: var(--text2); font-size: 0.85rem; }
+.sprint-selector select { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+.refresh-btn { margin-left: auto; background: var(--accent); border: none; color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+.refresh-btn:hover { background: #2563eb; }
+.loading-bar { height: 3px; background: var(--accent); width: 0%; transition: width 0.3s; }
+.loading-bar.active { animation: loading 2s infinite; }
+@keyframes loading { 0%{width:0%} 50%{width:70%} 100%{width:100%} }
+.main { padding: 24px 32px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.kpi-card.blue::before { background: var(--accent); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.yellow::before { background: var(--yellow); }
+.kpi-card.red::before { background: var(--red); }
+.kpi-card.purple::before { background: var(--purple); }
+.kpi-value { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+.kpi-value.blue { color: var(--accent); }
+.kpi-value.green { color: var(--green); }
+.kpi-value.yellow { color: var(--yellow); }
+.kpi-value.red { color: var(--red); }
+.kpi-value.purple { color: var(--purple); }
+.kpi-label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+.kpi-sub { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+.section { margin-bottom: 32px; }
+.section-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.section-title .icon { color: var(--accent); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+@media(max-width:1200px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+@media(max-width:900px) { .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card-title { font-size: 0.85rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+.chart-container { position: relative; height: 220px; }
+.chart-container.tall { height: 280px; }
+.person-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.person-row:last-child { border-bottom: none; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+.person-info { flex: 1; }
+.person-name { font-size: 0.9rem; font-weight: 600; }
+.person-stats { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; gap: 4px; }
+.badge-blue { background: rgba(59,130,246,0.15); color: #93c5fd; }
+.badge-green { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.badge-yellow { background: rgba(245,158,11,0.15); color: #fde68a; }
+.badge-red { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.badge-gray { background: rgba(107,114,128,0.2); color: #9ca3af; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.table th { text-align: left; padding: 10px 12px; color: var(--text2); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+.table td { padding: 10px 12px; border-bottom: 1px solid rgba(45,49,73,0.5); vertical-align: middle; }
+.table tr:hover td { background: rgba(255,255,255,0.03); }
+.table tr:last-child td { border-bottom: none; }
+.sla-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.sla-card { background: var(--bg3); border-radius: 8px; padding: 16px; text-align: center; }
+.sla-pct { font-size: 1.8rem; font-weight: 700; }
+.sla-label { font-size: 0.75rem; color: var(--text2); margin-top: 4px; }
+.summary-box { background: linear-gradient(135deg, rgba(30,58,138,0.3), rgba(30,64,175,0.2)); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 20px 24px; margin-bottom: 28px; }
+.summary-box h3 { color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+.summary-box p { color: var(--text); line-height: 1.7; font-size: 0.9rem; }
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg2); border-radius: 8px; padding: 4px; border: 1px solid var(--border); width: fit-content; }
+.tab { padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; background: transparent; color: var(--text2); transition: all 0.2s; }
+.tab.active { background: var(--accent); color: #fff; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.no-data { text-align: center; color: var(--text2); padding: 40px; font-size: 0.9rem; }
+.trend-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.footer { background: var(--bg2); border-top: 1px solid var(--border); padding: 16px 32px; text-align: center; color: var(--text2); font-size: 0.8rem; margin-top: 40px; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="loading-bar" id="loadingBar"></div>
+<div class="header">
+  <div class="header-left">
+    <h1>&#128640; Sprint Review Dashboard</h1>
+    <p id="headerSubtitle">Azure DevOps x Power Apps Helpdesk</p>
+  </div>
+  <div class="header-right">
+    <div class="sprint-name" id="headerSprintName">Nacitam...</div>
+    <div class="sprint-dates" id="headerSprintDates"></div>
+    <div style="font-size:0.75rem;color:#bfdbfe;margin-top:4px">Generovano: <span id="generatedAt"></span></div>
+  </div>
+</div>
+
+<div class="sprint-selector">
+  <label>Sprint:</label>
+  <select id="sprintSelect">
+    <option value="">-- Nacitam sprinty --</option>
+  </select>
+  <button class="refresh-btn" onclick="loadData()">
+    <span>&#8635;</span> Obnovit data
+  </button>
+  <span id="lastUpdated" style="font-size:0.8rem;color:#64748b;margin-left:8px"></span>
+</div>
+
+<div class="main">
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card blue"><div class="kpi-value blue" id="kpiTotal">--</div><div class="kpi-label">Celkem ticketu</div><div class="kpi-sub">DevOps + Helpdesk</div></div>
+    <div class="kpi-card green"><div class="kpi-value green" id="kpiClosed">--</div><div class="kpi-label">Uzavreno</div><div class="kpi-sub" id="kpiClosedPct">--</div></div>
+    <div class="kpi-card yellow"><div class="kpi-value yellow" id="kpiInProgress">--</div><div class="kpi-label">Probíhá</div><div class="kpi-sub">In Progress</div></div>
+    <div class="kpi-card red"><div class="kpi-value red" id="kpiOpen">--</div><div class="kpi-label">Otevreno</div><div class="kpi-sub">To Do / New</div></div>
+    <div class="kpi-card blue"><div class="kpi-value blue" id="kpiHD">--</div><div class="kpi-label">HD Pozadavky</div><div class="kpi-sub">s DevOps vazbou</div></div>
+    <div class="kpi-card purple"><div class="kpi-value purple" id="kpiAvgDays">--</div><div class="kpi-label">Prumer reseni</div><div class="kpi-sub">dni (cycle time)</div></div>
+    <div class="kpi-card green"><div class="kpi-value green" id="kpiSla">--</div><div class="kpi-label">SLA splneno</div><div class="kpi-sub" id="kpiSlaDetails">do limitu</div></div>
+    <div class="kpi-card yellow"><div class="kpi-value yellow" id="kpiTeamLoad">--</div><div class="kpi-label">Nejtizeneji</div><div class="kpi-sub" id="kpiTeamLoadSub">clen tymu</div></div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="summary-box">
+    <h3>&#128203; Manazerske shrnutí</h3>
+    <p id="executiveSummary">Nacitam data...</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">&#128200; Prehled</button>
+    <button class="tab" onclick="showTab('helpdesk')">&#127916; Helpdesk</button>
+    <button class="tab" onclick="showTab('team')">&#128100; Tym</button>
+    <button class="tab" onclick="showTab('time')">&#9200; Casova analyza</button>
+    <button class="tab" onclick="showTab('tickets')">&#128203; Tickety</button>
+  </div>
+
+  <!-- TAB: Overview -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="grid-3" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Stav DevOps ticketu</div><div class="chart-container"><canvas id="chartDevopsState"></canvas></div></div>
+      <div class="card"><div class="card-title">Rozdeleni prace (uzavreno)</div><div class="chart-container"><canvas id="chartTeamClosed"></canvas></div></div>
+      <div class="card"><div class="card-title">Priorita x Stav (Helpdesk)</div><div class="chart-container"><canvas id="chartPriorityState"></canvas></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Pocet ticketu na osobu</div>
+        <div id="teamPersonList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Trend - vznik a uzavreni pozadavku</div>
+        <div class="chart-container tall"><canvas id="chartTrend"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Helpdesk -->
+  <div class="tab-content" id="tab-helpdesk">
+    <div class="section">
+      <div class="section-title"><span class="icon">&#127916;</span> Helpdesk pozadavky - statistiky</div>
+      <div class="sla-grid" style="margin-bottom:20px" id="slaSummaryGrid"></div>
+      <div class="grid-3" style="margin-bottom:20px">
+        <div class="card"><div class="card-title">Priorita - pocty</div><div class="chart-container"><canvas id="chartHDPriority"></canvas></div></div>
+        <div class="card"><div class="card-title">Stav pozadavku</div><div class="chart-container"><canvas id="chartHDStatus"></canvas></div></div>
+        <div class="card"><div class="card-title">Prumerna doba reseni dle priority</div><div class="chart-container"><canvas id="chartHDAvgByPrio"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Seznam pozadavku (HD vazba)</div>
+        <div style="overflow-x:auto">
+          <table class="table" id="hdTable">
+            <thead><tr>
+              <th>ID</th><th>Nazev</th><th>Priorita</th><th>Stav</th><th>Vlastnik</th>
+              <th>Vytvoreno</th><th>Vyreseno</th><th>Doba reseni</th><th>SLA</th>
+            </tr></thead>
+            <tbody id="hdTableBody"><tr><td colspan="9" class="no-data">Nacitam...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Team -->
+  <div class="tab-content" id="tab-team">
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Rozdeleni ticketu - vsichni clenove</div><div class="chart-container tall"><canvas id="chartTeamAll"></canvas></div></div>
+      <div class="card"><div class="card-title">Prumerna doba reseni na osobu (dny)</div><div class="chart-container tall"><canvas id="chartTeamAvgTime"></canvas></div></div>
+    </div>
+    <div class="grid-4" id="teamDetailCards"></div>
+  </div>
+
+  <!-- TAB: Time Analysis -->
+  <div class="tab-content" id="tab-time">
+    <div class="kpi-grid" id="timeKpiGrid" style="margin-bottom:20px"></div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card"><div class="card-title">Distribuce doby reseni (pocet ticketu)</div><div class="chart-container tall"><canvas id="chartTimeHist"></canvas></div></div>
+      <div class="card"><div class="card-title">SLA plneni dle priority</div><div class="chart-container tall"><canvas id="chartSLAByPriority"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top 10 - nejdele resene tickety</div>
+      <table class="table" id="topLongTable">
+        <thead><tr><th>DevOps ID</th><th>Nazev</th><th>Vlastnik</th><th>Priorita</th><th>Vytvoreno</th><th>Vyreseno</th><th>Dni</th></tr></thead>
+        <tbody id="topLongBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Tickets -->
+  <div class="tab-content" id="tab-tickets">
+    <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="ticketSearch" placeholder="Hledat v ticketech..." style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;width:280px" oninput="filterTickets()">
+      <select id="ticketFilterState" onchange="filterTickets()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+        <option value="">Vsechny stavy</option>
+        <option value="New">New</option><option value="Active">Active</option>
+        <option value="Resolved">Resolved</option><option value="Closed">Closed</option>
+      </select>
+      <select id="ticketFilterPerson" onchange="filterTickets()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px">
+        <option value="">Vsechny osoby</option>
+      </select>
+      <span id="ticketCount" style="color:var(--text2);font-size:0.85rem"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="table" id="allTicketsTable">
+        <thead><tr><th>ID</th><th>Typ</th><th>Nazev</th><th>Stav</th><th>Assignee</th><th>Priorita</th><th>HD Vazba</th><th>Vytvoreno</th></tr></thead>
+        <tbody id="allTicketsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>Sprint Review Dashboard | Azure DevOps x Power Apps Helpdesk | Vytvoren automaticky</p>
+  <p style="margin-top:4px">Pro nastaveni API napojeni upravte <code>config.js</code></p>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPRINT REVIEW DASHBOARD - Main Application Logic
+// Data loading is separated: use mock.js for testing, api.js for production
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _charts = {};
+let _data = null;
+let _allTickets = [];
+
+// Tab switching
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Loading indicator
+function setLoading(on) {
+  const bar = document.getElementById('loadingBar');
+  if(on) bar.classList.add('active'); else { bar.classList.remove('active'); bar.style.width='100%'; setTimeout(()=>bar.style.width='0%', 300); }
+}
+
+// Number formatting
+function fmt(n, decimals=0) {
+  if(n === null || n === undefined || isNaN(n)) return '--';
+  return Number(n).toLocaleString('cs-CZ', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+
+function fmtDate(d) {
+  if(!d) return '--';
+  try { return new Date(d).toLocaleDateString('cs-CZ'); } catch(e) { return '--'; }
+}
+
+function daysBetween(a, b) {
+  if(!a || !b) return null;
+  const diff = (new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24);
+  return diff >= 0 ? Math.round(diff * 10) / 10 : null;
+}
+
+function median(arr) {
+  if(!arr.length) return 0;
+  const s = [...arr].sort((a,b)=>a-b);
+  const m = Math.floor(s.length/2);
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+
+function getPriorityLabel(p) {
+  return (CONFIG.priorities[p] || {label:'?'}).label;
+}
+
+function getPriorityColor(p) {
+  return (CONFIG.priorities[p] || {color:'#6B7280'}).color;
+}
+
+function getSlaLimit(p) {
+  return (CONFIG.priorities[p] || {sla:7}).sla;
+}
+
+function getStatusBadge(state) {
+  const map = { 'Closed':'green', 'Resolved':'green', 'Active':'yellow', 'New':'gray', 'Probihá':'blue', 'Vyreseno':'green', 'Prirazeno':'gray' };
+  const cls = map[state] || 'gray';
+  return '<span class="badge badge-' + cls + '">' + (state||'?') + '</span>';
+}
+
+// Destroy chart if exists
+function destroyChart(id) {
+  if(_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+// Create chart helper
+function mkChart(id, type, labels, datasets, opts={}) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  _charts[id] = new Chart(ctx, {
+    type, data: {labels, datasets},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: {size:11} } },
+        ...( opts.tooltips || {} )
+      },
+      scales: type === 'pie' || type === 'doughnut' ? {} : {
+        x: { ticks: {color:'#94a3b8', font:{size:10}}, grid: {color:'rgba(255,255,255,0.05)'} },
+        y: { ticks: {color:'#94a3b8', font:{size:10}}, grid: {color:'rgba(255,255,255,0.05)'} },
+      },
+      ...opts
+    }
+  });
+}
+
+// ─── Data Loading ─────────────────────────────────────────────────────────────
+async function loadSprints() {
+  const sel = document.getElementById('sprintSelect');
+  sel.innerHTML = '<option value="">Nacitam...</option>';
+  try {
+    const sprints = await DataSource.getSprints();
+    sel.innerHTML = sprints.map(s => '<option value="' + s.id + '" ' + (s.isCurrent?'selected':'') + '>' + s.name + '</option>').join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="mock">Demo data (mock)</option>';
+  }
+}
+
+async function loadData() {
+  setLoading(true);
+  document.getElementById('lastUpdated').textContent = '';
+  try {
+    const sprintId = document.getElementById('sprintSelect').value;
+    _data = await DataSource.getSprintData(sprintId);
+    renderAll(_data);
+    document.getElementById('lastUpdated').textContent = 'Obnoveno: ' + new Date().toLocaleTimeString('cs-CZ');
+  } catch(e) {
+    console.error('Load error:', e);
+    document.getElementById('executiveSummary').textContent = 'Chyba pri nacitani dat: ' + e.message;
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─── Render All ───────────────────────────────────────────────────────────────
+function renderAll(d) {
+  document.getElementById('generatedAt').textContent = new Date().toLocaleDateString('cs-CZ');
+  document.getElementById('headerSprintName').textContent = d.sprint.name;
+  document.getElementById('headerSprintDates').textContent = fmtDate(d.sprint.startDate) + ' – ' + fmtDate(d.sprint.endDate);
+
+  renderKPIs(d);
+  renderSummary(d);
+  renderOverview(d);
+  renderHelpdesk(d);
+  renderTeam(d);
+  renderTimeAnalysis(d);
+  renderTicketsList(d);
+}
+
+// ─── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs(d) {
+  const wi = d.workItems || [];
+  const hd = d.helpdesk || [];
+  const total = wi.length;
+  const closed = wi.filter(w => w.state === 'Closed' || w.state === 'Resolved').length;
+  const inprog = wi.filter(w => w.state === 'Active').length;
+  const open = wi.filter(w => w.state === 'New').length;
+  const hdLinked = hd.filter(h => h.devopsId).length;
+
+  // Avg days for resolved items
+  const resolved = hd.filter(h => h.resolvedDate && h.createdDate);
+  const avgDays = resolved.length ? (resolved.reduce((s,h) => s + daysBetween(h.createdDate, h.resolvedDate), 0) / resolved.length).toFixed(1) : '--';
+
+  // SLA
+  const slaOk = resolved.filter(h => {
+    const days = daysBetween(h.createdDate, h.resolvedDate);
+    const limit = getSlaLimit(h.priority);
+    return days !== null && days <= limit;
+  }).length;
+  const slaPct = resolved.length ? Math.round(slaOk / resolved.length * 100) : 0;
+
+  // Most loaded person
+  const personLoad = {};
+  wi.forEach(w => { if(w.assignee) personLoad[w.assignee] = (personLoad[w.assignee]||0) + 1; });
+  const topPerson = Object.entries(personLoad).sort((a,b)=>b[1]-a[1])[0];
+  const topMember = CONFIG.teamMembers.find(m => topPerson && (m.devopsName === topPerson[0] || m.name === topPerson[0]));
+
+  document.getElementById('kpiTotal').textContent = fmt(total);
+  document.getElementById('kpiClosed').textContent = fmt(closed);
+  document.getElementById('kpiClosedPct').textContent = total ? Math.round(closed/total*100) + '% dokonceno' : '--';
+  document.getElementById('kpiInProgress').textContent = fmt(inprog);
+  document.getElementById('kpiOpen').textContent = fmt(open);
+  document.getElementById('kpiHD').textContent = fmt(hdLinked);
+  document.getElementById('kpiAvgDays').textContent = avgDays;
+  document.getElementById('kpiSla').textContent = slaPct + '%';
+  document.getElementById('kpiSlaDetails').textContent = slaOk + ' z ' + resolved.length;
+  document.getElementById('kpiTeamLoad').textContent = topMember ? topMember.initials : (topPerson ? topPerson[0].split(' ')[0] : '--');
+  document.getElementById('kpiTeamLoadSub').textContent = topPerson ? topPerson[1] + ' ticketu' : '';
+}
+
+// ─── Summary ──────────────────────────────────────────────────────────────────
+function renderSummary(d) {
+  const wi = d.workItems || [];
+  const hd = d.helpdesk || [];
+  const closed = wi.filter(w => w.state==='Closed'||w.state==='Resolved').length;
+  const pct = wi.length ? Math.round(closed/wi.length*100) : 0;
+  const resolved = hd.filter(h => h.resolvedDate && h.createdDate);
+  const avgDays = resolved.length ? (resolved.reduce((s,h)=>s+daysBetween(h.createdDate,h.resolvedDate),0)/resolved.length).toFixed(1) : null;
+  
+  const personLoad = {};
+  wi.forEach(w => { if(w.assignee) personLoad[w.assignee] = (personLoad[w.assignee]||0) + 1; });
+  const sorted = Object.entries(personLoad).sort((a,b)=>b[1]-a[1]);
+  const topPerson = sorted[0];
+  const topMember = topPerson ? (CONFIG.teamMembers.find(m => m.devopsName===topPerson[0]||m.name===topPerson[0]) || {name:topPerson[0]}) : null;
+
+  let txt = 'Sprint <strong>' + d.sprint.name + '</strong> (' + fmtDate(d.sprint.startDate) + ' – ' + fmtDate(d.sprint.endDate) + '). ';
+  txt += 'Celkem zpracovano <strong>' + wi.length + '</strong> pracovnich polozek, uzavreno <strong>' + closed + ' (' + pct + '%)</strong>. ';
+  if(hd.length) txt += 'Z Helpdesku prirazeno <strong>' + hd.length + '</strong> pozadavku. ';
+  if(avgDays) txt += 'Prumerna doba reseni HD ticketu: <strong>' + avgDays + ' dni</strong>. ';
+  if(topMember) txt += 'Nejvice vytizenym clenem tymu byl(a) <strong>' + topMember.name + '</strong> (' + topPerson[1] + ' ticketu). ';
+  
+  const bottleneck = resolved.filter(h => daysBetween(h.createdDate, h.resolvedDate) > 7);
+  if(bottleneck.length) txt += 'Celkem <strong>' + bottleneck.length + '</strong> pozadavku bylo reseno dele nez 7 dni — doporucujeme analyzu procesu. ';
+
+  document.getElementById('executiveSummary').innerHTML = txt;
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function renderOverview(d) {
+  const wi = d.workItems || [];
+  const hd = d.helpdesk || [];
+
+  // DevOps state donut
+  const states = ['New','Active','Resolved','Closed'];
+  const stateColors = ['#6B7280','#F59E0B','#10B981','#059669'];
+  mkChart('chartDevopsState','doughnut', states,
+    [{ data: states.map(s => wi.filter(w=>w.state===s).length), backgroundColor: stateColors, borderWidth: 0 }]);
+
+  // Team closed donut
+  const members = CONFIG.teamMembers;
+  const teamClosed = members.map(m => wi.filter(w => (w.assignee===m.devopsName||w.assignee===m.name) && (w.state==='Closed'||w.state==='Resolved')).length);
+  mkChart('chartTeamClosed','doughnut', members.map(m=>m.name),
+    [{ data: teamClosed, backgroundColor: members.map(m=>m.color), borderWidth: 0 }]);
+
+  // Priority x State bar (helpdesk)
+  const prios = [1,2,3,4];
+  const hdOpen = prios.map(p => hd.filter(h=>h.priority===p && h.status!=='Vyreseno' && h.status!=='Uzavreno').length);
+  const hdDone = prios.map(p => hd.filter(h=>h.priority===p && (h.status==='Vyreseno'||h.status==='Uzavreno')).length);
+  mkChart('chartPriorityState','bar', prios.map(p=>CONFIG.priorities[p].label), [
+    { label:'Otevreno', data:hdOpen, backgroundColor:'#EF4444', borderRadius:4 },
+    { label:'Vyreseno', data:hdDone, backgroundColor:'#10B981', borderRadius:4 },
+  ], { scales: { x:{stacked:true,ticks:{color:'#94a3b8'}}, y:{stacked:true,ticks:{color:'#94a3b8'}} } });
+
+  // Team person list
+  const personListEl = document.getElementById('teamPersonList');
+  const maxCount = Math.max(...members.map(m => wi.filter(w=>w.assignee===m.devopsName||w.assignee===m.name).length), 1);
+  personListEl.innerHTML = members.map(m => {
+    const total = wi.filter(w=>w.assignee===m.devopsName||w.assignee===m.name).length;
+    const done = wi.filter(w=>(w.assignee===m.devopsName||w.assignee===m.name)&&(w.state==='Closed'||w.state==='Resolved')).length;
+    return '<div class="person-row"><div class="avatar" style="background:'+m.color+'">'+m.initials+'</div><div class="person-info"><div class="person-name">'+m.name+'</div><div class="person-stats">'+total+' ticketu, '+done+' uzavreno</div><div class="progress-bar"><div class="progress-fill" style="width:'+Math.round(total/maxCount*100)+'%;background:'+m.color+'"></div></div></div><div><span class="badge badge-blue">'+total+'</span></div></div>';
+  }).join('');
+
+  // Trend line chart
+  renderTrendChart(d);
+}
+
+function renderTrendChart(d) {
+  const hd = d.helpdesk || [];
+  const sprintStart = new Date(d.sprint.startDate);
+  const sprintEnd = new Date(d.sprint.endDate);
+  const days = [];
+  for(let dt = new Date(sprintStart); dt <= sprintEnd; dt.setDate(dt.getDate()+1)) {
+    days.push(dt.toISOString().split('T')[0]);
+  }
+  const created = days.map(day => hd.filter(h => h.createdDate && h.createdDate.split('T')[0] === day).length);
+  const closedArr = days.map(day => hd.filter(h => h.resolvedDate && h.resolvedDate.split('T')[0] === day).length);
+  const labels = days.map(d => d.substring(5));
+  mkChart('chartTrend','line', labels, [
+    { label:'Vytvoreno', data:created, borderColor:'#3B82F6', backgroundColor:'rgba(59,130,246,0.1)', tension:0.3, fill:true },
+    { label:'Uzavreno', data:closedArr, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,0.1)', tension:0.3, fill:true },
+  ]);
+}
+
+// ─── Helpdesk Tab ─────────────────────────────────────────────────────────────
+function renderHelpdesk(d) {
+  const hd = d.helpdesk || [];
+  const resolved = hd.filter(h => h.resolvedDate && h.createdDate);
+
+  // SLA summary cards
+  const slaGrid = document.getElementById('slaSummaryGrid');
+  const slaLimits = [1, 3, 7, 14];
+  slaGrid.innerHTML = slaLimits.map(limit => {
+    const ok = resolved.filter(h => daysBetween(h.createdDate, h.resolvedDate) <= limit).length;
+    const pct = resolved.length ? Math.round(ok/resolved.length*100) : 0;
+    const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+    return '<div class="sla-card"><div class="sla-pct" style="color:'+color+'">'+pct+'%</div><div class="sla-label">Do '+limit+' dn&iacute; ('+ok+'/'+resolved.length+')</div></div>';
+  }).join('');
+
+  // Priority donut
+  const prios = [1,2,3,4];
+  mkChart('chartHDPriority','doughnut', prios.map(p=>CONFIG.priorities[p].label),
+    [{ data:prios.map(p=>hd.filter(h=>h.priority===p).length), backgroundColor:prios.map(p=>CONFIG.priorities[p].color), borderWidth:0 }]);
+
+  // Status bar
+  const statuses = ['Prirazeno','Probihá','Vyreseno','Uzavreno','Zruseno'];
+  const statusColors = ['#6B7280','#3B82F6','#10B981','#059669','#EF4444'];
+  mkChart('chartHDStatus','bar', statuses,
+    [{ data:statuses.map(s=>hd.filter(h=>h.status===s).length), backgroundColor:statusColors, borderRadius:6 }],
+    { plugins:{legend:{display:false}} });
+
+  // Avg by priority bar
+  const avgByPrio = prios.map(p => {
+    const items = resolved.filter(h=>h.priority===p);
+    return items.length ? (items.reduce((s,h)=>s+daysBetween(h.createdDate,h.resolvedDate),0)/items.length).toFixed(1) : 0;
+  });
+  mkChart('chartHDAvgByPrio','bar', prios.map(p=>CONFIG.priorities[p].label),
+    [{ data:avgByPrio, backgroundColor:prios.map(p=>CONFIG.priorities[p].color), borderRadius:6 }],
+    { plugins:{legend:{display:false}} });
+
+  // Table
+  const tbody = document.getElementById('hdTableBody');
+  if(!hd.length) { tbody.innerHTML = '<tr><td colspan="9" class="no-data">Zadna data</td></tr>'; return; }
+  const sorted = [...hd].sort((a,b) => new Date(b.createdDate||0) - new Date(a.createdDate||0));
+  tbody.innerHTML = sorted.map(h => {
+    const days = daysBetween(h.createdDate, h.resolvedDate);
+    const limit = getSlaLimit(h.priority);
+    const slaOk = days !== null && days <= limit;
+    const slaIcon = h.resolvedDate ? (slaOk ? '<span style="color:var(--green)">&#10003; OK</span>' : '<span style="color:var(--red)">&#10007; Prekroceno</span>') : '<span style="color:var(--text2)">--</span>';
+    return '<tr><td><a href="https://dev.azure.com/GradaBookport/CentralniSystem/_workitems/edit/'+h.devopsId+'" target="_blank" style="color:var(--accent)">#'+h.devopsId+'</a></td>' +
+      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+h.title+'">'+h.title+'</td>' +
+      '<td><span class="badge" style="background:'+getPriorityColor(h.priority)+'22;color:'+getPriorityColor(h.priority)+'">'+getPriorityLabel(h.priority)+'</span></td>' +
+      '<td>'+getStatusBadge(h.status)+'</td><td>'+h.owner+'</td>' +
+      '<td>'+fmtDate(h.createdDate)+'</td><td>'+fmtDate(h.resolvedDate)+'</td>' +
+      '<td>'+(days !== null ? days + ' d' : '--')+'</td><td>'+slaIcon+'</td></tr>';
+  }).join('');
+}
+
+// ─── Team Tab ─────────────────────────────────────────────────────────────────
+function renderTeam(d) {
+  const wi = d.workItems || [];
+  const hd = d.helpdesk || [];
+  const members = CONFIG.teamMembers;
+
+  // All tickets bar
+  const allCounts = members.map(m => wi.filter(w=>w.assignee===m.devopsName||w.assignee===m.name).length);
+  mkChart('chartTeamAll','bar', members.map(m=>m.name),
+    [{ data:allCounts, backgroundColor:members.map(m=>m.color), borderRadius:6 }],
+    { plugins:{legend:{display:false}}, indexAxis:'y' });
+
+  // Avg time bar
+  const avgTimes = members.map(m => {
+    const items = hd.filter(h=>h.owner===m.name&&h.resolvedDate&&h.createdDate);
+    return items.length ? (items.reduce((s,h)=>s+daysBetween(h.createdDate,h.resolvedDate),0)/items.length).toFixed(1) : 0;
+  });
+  mkChart('chartTeamAvgTime','bar', members.map(m=>m.name),
+    [{ data:avgTimes, backgroundColor:members.map(m=>m.color+'cc'), borderRadius:6 }],
+    { plugins:{legend:{display:false}}, indexAxis:'y' });
+
+  // Detail cards
+  const cardsEl = document.getElementById('teamDetailCards');
+  cardsEl.innerHTML = members.map(m => {
+    const total = wi.filter(w=>w.assignee===m.devopsName||w.assignee===m.name).length;
+    const closed = wi.filter(w=>(w.assignee===m.devopsName||w.assignee===m.name)&&(w.state==='Closed'||w.state==='Resolved')).length;
+    const inprog = wi.filter(w=>(w.assignee===m.devopsName||w.assignee===m.name)&&w.state==='Active').length;
+    const hdItems = hd.filter(h=>h.owner===m.name&&h.resolvedDate&&h.createdDate);
+    const avgT = hdItems.length ? (hdItems.reduce((s,h)=>s+daysBetween(h.createdDate,h.resolvedDate),0)/hdItems.length).toFixed(1) : '--';
+    const pct = total ? Math.round(closed/total*100) : 0;
+    return '<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div class="avatar" style="background:'+m.color+';width:44px;height:44px;font-size:0.9rem">'+m.initials+'</div><div><div style="font-weight:700">'+m.name+'</div><div style="color:var(--text2);font-size:0.78rem">'+total+' ticketu celkem</div></div></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:var(--green)">'+closed+'</div><div style="font-size:0.7rem;color:var(--text2)">Uzavreno</div></div>' +
+      '<div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:var(--yellow)">'+inprog+'</div><div style="font-size:0.7rem;color:var(--text2)">Probiha</div></div>' +
+      '<div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:'+m.color+'">'+pct+'%</div><div style="font-size:0.7rem;color:var(--text2)">Dokonceno</div></div>' +
+      '<div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:var(--purple)">'+avgT+'</div><div style="font-size:0.7rem;color:var(--text2)">Avg dni</div></div>' +
+      '</div><div class="progress-bar" style="margin-top:12px"><div class="progress-fill" style="width:'+pct+'%;background:'+m.color+'"></div></div></div>';
+  }).join('');
+}
+
+// ─── Time Analysis Tab ────────────────────────────────────────────────────────
+function renderTimeAnalysis(d) {
+  const hd = d.helpdesk || [];
+  const resolved = hd.filter(h => h.resolvedDate && h.createdDate);
+  const times = resolved.map(h => daysBetween(h.createdDate, h.resolvedDate)).filter(n=>n!==null);
+
+  const avg = times.length ? (times.reduce((a,b)=>a+b,0)/times.length).toFixed(1) : '--';
+  const med = times.length ? median(times).toFixed(1) : '--';
+  const maxT = times.length ? Math.max(...times).toFixed(1) : '--';
+  const minT = times.length ? Math.min(...times).toFixed(1) : '--';
+
+  document.getElementById('timeKpiGrid').innerHTML = [
+    {v:avg, l:'Prumer', s:'dni', c:'blue'},
+    {v:med, l:'Median', s:'dni', c:'green'},
+    {v:minT, l:'Nejrychlejsi', s:'dni', c:'yellow'},
+    {v:maxT, l:'Nejdelsi', s:'dni', c:'red'},
+    {v:times.length, l:'Vyresenych', s:'ticketu', c:'purple'},
+    {v:hd.length-resolved.length, l:'Otevreno', s:'ticketu', c:'yellow'},
+  ].map(k=>'<div class="kpi-card '+k.c+'"><div class="kpi-value '+k.c+'">'+k.v+'</div><div class="kpi-label">'+k.l+'</div><div class="kpi-sub">'+k.s+'</div></div>').join('');
+
+  // Histogram
+  const buckets = [0,1,2,3,5,7,14,30,999];
+  const labels = ['0d','1d','2d','3-4d','5-6d','7-13d','14-29d','30+d'];
+  const counts = buckets.slice(0,-1).map((b,i) => times.filter(t=>t>=b&&t<buckets[i+1]).length);
+  mkChart('chartTimeHist','bar', labels,
+    [{ data:counts, backgroundColor:'#3B82F6', borderRadius:6 }],
+    { plugins:{legend:{display:false}} });
+
+  // SLA by priority
+  const prios = [1,2,3,4];
+  const slaData = prios.map(p => {
+    const items = resolved.filter(h=>h.priority===p);
+    const ok = items.filter(h=>daysBetween(h.createdDate,h.resolvedDate)<=getSlaLimit(p)).length;
+    return items.length ? Math.round(ok/items.length*100) : 0;
+  });
+  mkChart('chartSLAByPriority','bar', prios.map(p=>CONFIG.priorities[p].label+' ('+getSlaLimit(p)+'d)'),
+    [{ data:slaData, backgroundColor:prios.map(p=>CONFIG.priorities[p].color), borderRadius:6 }],
+    { plugins:{legend:{display:false}}, scales:{y:{max:100,ticks:{callback:v=>v+'%',color:'#94a3b8'},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{color:'#94a3b8'}}} });
+
+  // Top long tickets
+  const sorted = [...resolved].map(h=>({...h,days:daysBetween(h.createdDate,h.resolvedDate)})).sort((a,b)=>b.days-a.days).slice(0,10);
+  document.getElementById('topLongBody').innerHTML = sorted.map(h =>
+    '<tr><td><a href="https://dev.azure.com/GradaBookport/CentralniSystem/_workitems/edit/'+h.devopsId+'" target="_blank" style="color:var(--accent)">#'+h.devopsId+'</a></td>' +
+    '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+h.title+'</td>' +
+    '<td>'+h.owner+'</td><td><span style="color:'+getPriorityColor(h.priority)+'">'+getPriorityLabel(h.priority)+'</span></td>' +
+    '<td>'+fmtDate(h.createdDate)+'</td><td>'+fmtDate(h.resolvedDate)+'</td>' +
+    '<td style="font-weight:700;color:'+(h.days>7?'var(--red)':h.days>3?'var(--yellow)':'var(--green)')+'">'+h.days+'d</td></tr>'
+  ).join('');
+}
+
+// ─── Tickets List Tab ─────────────────────────────────────────────────────────
+function renderTicketsList(d) {
+  _allTickets = d.workItems || [];
+  
+  // Populate person filter
+  const personSel = document.getElementById('ticketFilterPerson');
+  const persons = [...new Set(_allTickets.map(w=>w.assignee).filter(Boolean))].sort();
+  personSel.innerHTML = '<option value="">Vsechny osoby</option>' + persons.map(p=>'<option value="'+p+'">'+p+'</option>').join('');
+  
+  filterTickets();
+}
+
+function filterTickets() {
+  const search = document.getElementById('ticketSearch').value.toLowerCase();
+  const stateFilter = document.getElementById('ticketFilterState').value;
+  const personFilter = document.getElementById('ticketFilterPerson').value;
+  const hdLinked = new Set((_data?.helpdesk||[]).map(h=>String(h.devopsId)));
+  
+  const filtered = _allTickets.filter(w => {
+    if(search && !(w.title||'').toLowerCase().includes(search) && !String(w.id).includes(search)) return false;
+    if(stateFilter && w.state !== stateFilter) return false;
+    if(personFilter && w.assignee !== personFilter) return false;
+    return true;
+  });
+
+  document.getElementById('ticketCount').textContent = filtered.length + ' polozek';
+  const tbody = document.getElementById('allTicketsBody');
+  if(!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="no-data">Zadne vysledky</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(w => {
+    const hasHD = hdLinked.has(String(w.id));
+    return '<tr><td><a href="https://dev.azure.com/GradaBookport/CentralniSystem/_workitems/edit/'+w.id+'" target="_blank" style="color:var(--accent)">#'+w.id+'</a></td>' +
+      '<td><span class="badge badge-gray">'+w.type+'</span></td>' +
+      '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+w.title+'">'+w.title+'</td>' +
+      '<td>'+getStatusBadge(w.state)+'</td><td>'+(w.assignee||'--')+'</td>' +
+      '<td>'+(w.priority?'<span style="color:'+getPriorityColor(w.priority)+'">P'+w.priority+'</span>':'--')+'</td>' +
+      '<td>'+(hasHD?'<span class="badge badge-blue">&#128279; HD</span>':'<span style="color:var(--text2);font-size:0.75rem">--</span>')+'</td>' +
+      '<td>'+fmtDate(w.createdDate)+'</td></tr>';
+  }).join('');
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  await loadSprints();
+  await loadData();
+  // Auto-refresh
+  const interval = (CONFIG.ui.refreshIntervalMinutes || 30) * 60 * 1000;
+  setInterval(loadData, interval);
+})();
+</script>
+</body>
+</html>
