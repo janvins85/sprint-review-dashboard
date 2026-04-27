@@ -18,9 +18,12 @@ export default async function handler(req, res) {
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/p>/gi, "\n")
       .replace(/<\/div>/gi, "\n")
+      .replace(/<\/li>/gi, "\n")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;/g, " ")
       .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
       .replace(/\r/g, "\n")
       .replace(/[ \t]+/g, " ")
       .replace(/\n\s+/g, "\n")
@@ -45,10 +48,6 @@ export default async function handler(req, res) {
 
   function extractRequester(text = "") {
     const clean = stripHtml(text);
-    const lines = clean
-      .split("\n")
-      .map(line => line.trim())
-      .filter(Boolean);
 
     const patterns = [
       /vytvořil\s*[:\-]\s*([^\n\r;]+)/i,
@@ -64,16 +63,6 @@ export default async function handler(req, res) {
       /created\s*by\s*[:\-]\s*([^\n\r;]+)/i
     ];
 
-    for (const line of lines) {
-      for (const pattern of patterns) {
-        const match = line.match(pattern);
-        if (match && match[1]) {
-          const person = cleanPersonName(match[1]);
-          if (person) return person;
-        }
-      }
-    }
-
     for (const pattern of patterns) {
       const match = clean.match(pattern);
       if (match && match[1]) {
@@ -82,7 +71,9 @@ export default async function handler(req, res) {
       }
     }
 
+    const lines = clean.split("\n").map(x => x.trim()).filter(Boolean);
     const lastLine = lines[lines.length - 1] || "";
+
     if (/^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{2,5}$/i.test(lastLine)) {
       return lastLine;
     }
@@ -92,11 +83,7 @@ export default async function handler(req, res) {
 
   function detectHelpdesk({ parentId, areaPath }) {
     const area = normalizeText(areaPath || "");
-
-    return (
-      parentId === helpDeskParentId ||
-      area.includes("helpdesk")
-    );
+    return parentId === helpDeskParentId || area.includes("helpdesk");
   }
 
   try {
@@ -210,30 +197,27 @@ export default async function handler(req, res) {
       const createdBy =
         f["System.CreatedBy"]?.displayName ||
         f["System.CreatedBy"]?.uniqueName ||
-        null;
+        "Neznámý autor";
 
       const descriptionRaw = f["System.Description"] || "";
       const reproStepsRaw = f["Microsoft.VSTS.TCM.ReproSteps"] || "";
+
       const description = stripHtml(descriptionRaw);
       const reproSteps = stripHtml(reproStepsRaw);
 
       const parsedRequester =
         extractRequester(reproStepsRaw) ||
-        extractRequester(descriptionRaw);
+        extractRequester(descriptionRaw) ||
+        extractRequester(reproSteps) ||
+        extractRequester(description);
 
-      const requester =
-        parsedRequester ||
-        createdBy ||
-        "Neznámý zadavatel";
+      const requester = parsedRequester || createdBy || "Neznámý zadavatel";
 
       const title = f["System.Title"] || "";
       const areaPath = f["System.AreaPath"] || "";
       const tags = f["System.Tags"] || "";
 
-      const isHelpdesk = detectHelpdesk({
-        parentId,
-        areaPath
-      });
+      const isHelpdesk = detectHelpdesk({ parentId, areaPath });
 
       const closedDate = f["Microsoft.VSTS.Common.ClosedDate"] || null;
       const createdDate = f["System.CreatedDate"] || null;
@@ -298,6 +282,9 @@ export default async function handler(req, res) {
         ...item,
         status: item.state,
         owner: item.assignee,
+        requester: item.requester,
+        requestedBy: item.requester,
+        author: item.requester,
         resolvedDate: item.closedDate,
       }));
 
@@ -308,12 +295,8 @@ export default async function handler(req, res) {
       helpDeskParentId,
       debug: {
         loadedIds: ids.length,
-        containsTicket1983: workItems.some(item => item.id === 1983),
-        containsTicket1984: workItems.some(item => item.id === 1984),
         containsTicket1986: workItems.some(item => item.id === 1986),
         containsTicket1987: workItems.some(item => item.id === 1987),
-        ticket1983: workItems.find(item => item.id === 1983) || null,
-        ticket1984: workItems.find(item => item.id === 1984) || null,
         ticket1986: workItems.find(item => item.id === 1986) || null,
         ticket1987: workItems.find(item => item.id === 1987) || null,
         helpdeskCount: helpdesk.length,
