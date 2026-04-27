@@ -46,39 +46,17 @@ export default async function handler(req, res) {
       .slice(0, 120);
   }
 
-  function extractRequester(text = "") {
-    const clean = stripHtml(text);
+  function extractRequesterFromReproSteps(reproStepsRaw = "") {
+    const clean = stripHtml(reproStepsRaw);
 
-    const patterns = [
-      /vytvořil\s*[:\-]\s*([^\n\r;]+)/i,
-      /vytvoril\s*[:\-]\s*([^\n\r;]+)/i,
-      /zadavatel\s*[:\-]\s*([^\n\r;]+)/i,
-      /žadatel\s*[:\-]\s*([^\n\r;]+)/i,
-      /zadatel\s*[:\-]\s*([^\n\r;]+)/i,
-      /zadáno\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
-      /zadano\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
-      /requested\s*by\s*[:\-]\s*([^\n\r;]+)/i,
-      /requester\s*[:\-]\s*([^\n\r;]+)/i,
-      /autor\s*[:\-]\s*([^\n\r;]+)/i,
-      /created\s*by\s*[:\-]\s*([^\n\r;]+)/i
-    ];
+    const match = clean.match(/vytvořil\s*[:\-]\s*([^\n\r;]+)/i)
+      || clean.match(/vytvoril\s*[:\-]\s*([^\n\r;]+)/i);
 
-    for (const pattern of patterns) {
-      const match = clean.match(pattern);
-      if (match && match[1]) {
-        const person = cleanPersonName(match[1]);
-        if (person) return person;
-      }
+    if (!match || !match[1]) {
+      return null;
     }
 
-    const lines = clean.split("\n").map(x => x.trim()).filter(Boolean);
-    const lastLine = lines[lines.length - 1] || "";
-
-    if (/^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]{2,5}$/i.test(lastLine)) {
-      return lastLine;
-    }
-
-    return null;
+    return cleanPersonName(match[1]);
   }
 
   function detectHelpdesk({ parentId, areaPath }) {
@@ -205,13 +183,8 @@ export default async function handler(req, res) {
       const description = stripHtml(descriptionRaw);
       const reproSteps = stripHtml(reproStepsRaw);
 
-      const parsedRequester =
-        extractRequester(reproStepsRaw) ||
-        extractRequester(descriptionRaw) ||
-        extractRequester(reproSteps) ||
-        extractRequester(description);
-
-      const requester = parsedRequester || createdBy || "Neznámý zadavatel";
+      const parsedRequester = extractRequesterFromReproSteps(reproStepsRaw);
+      const requester = parsedRequester || "Neznámý zadavatel";
 
       const title = f["System.Title"] || "";
       const areaPath = f["System.AreaPath"] || "";
