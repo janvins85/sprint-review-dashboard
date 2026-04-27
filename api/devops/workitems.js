@@ -90,30 +90,13 @@ export default async function handler(req, res) {
     return null;
   }
 
-  function detectHelpdesk({ parentId, areaPath, tags, title, description, reproSteps }) {
-    if (parentId === helpDeskParentId) return true;
+  function detectHelpdesk({ parentId, areaPath }) {
+    const area = normalizeText(areaPath || "");
 
-    const source = normalizeText([
-      areaPath,
-      tags,
-      title,
-      description,
-      reproSteps
-    ].join(" "));
-
-    const helpdeskSignals = [
-      "helpdesk",
-      "power apps",
-      "powerapps",
-      "pozadavek",
-      "zadavatel",
-      "vytvoril",
-      "zadano z powerapps",
-      "power automate",
-      "flow"
-    ];
-
-    return helpdeskSignals.some(signal => source.includes(signal));
+    return (
+      parentId === helpDeskParentId ||
+      area.includes("helpdesk")
+    );
   }
 
   try {
@@ -249,11 +232,7 @@ export default async function handler(req, res) {
 
       const isHelpdesk = detectHelpdesk({
         parentId,
-        areaPath,
-        tags,
-        title,
-        description,
-        reproSteps
+        areaPath
       });
 
       const closedDate = f["Microsoft.VSTS.Common.ClosedDate"] || null;
@@ -332,9 +311,11 @@ export default async function handler(req, res) {
         containsTicket1983: workItems.some(item => item.id === 1983),
         containsTicket1984: workItems.some(item => item.id === 1984),
         containsTicket1986: workItems.some(item => item.id === 1986),
+        containsTicket1987: workItems.some(item => item.id === 1987),
         ticket1983: workItems.find(item => item.id === 1983) || null,
         ticket1984: workItems.find(item => item.id === 1984) || null,
         ticket1986: workItems.find(item => item.id === 1986) || null,
+        ticket1987: workItems.find(item => item.id === 1987) || null,
         helpdeskCount: helpdesk.length,
         planningCount: planningItems.length,
       },
