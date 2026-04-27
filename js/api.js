@@ -1,123 +1,90 @@
 /**
  * Azure DevOps API Wrapper
- * Pouzije se automaticky pokud je v config.js vyplneno CONFIG.devops.pat
- * 
- * CORS POZNAMKA: Azure DevOps API nepodporuje CORS z prohlizece primo.
- * Pro produkcni pouziti doporucujeme:
- *   1. Proxy server (Vercel Edge Function - viz /api/devops.js)
- *   2. Backend API
- *   3. Power Automate flow
+ * Bezpečná varianta: frontend NEVOLÁ Azure DevOps přímo.
+ * Frontend volá pouze vlastní Vercel endpointy /api/...
  */
 
 const DevOpsAPI = {
-  baseUrl() {
-    return 'https://dev.azure.com/' + CONFIG.devops.organization + '/' + CONFIG.devops.project;
-  },
-
-  headers() {
-    const token = btoa(':' + CONFIG.devops.pat);
-    return {
-      'Authorization': 'Basic ' + token,
-      'Content-Type': 'application/json',
-    };
-  },
-
-  async request(path, options = {}) {
-    const url = this.baseUrl() + '/_apis/' + path + '?api-version=' + CONFIG.devops.apiVersion;
-    const resp = await fetch(url, {
-      headers: this.headers(),
+  async requestLocal(path, options = {}) {
+    const resp = await fetch(path, {
+      headers: {
+        "Content-Type": "application/json",
+      },
       ...options,
     });
-    if (!resp.ok) throw new Error('DevOps API error: ' + resp.status + ' ' + await resp.text());
-    return resp.json();
-  },
 
-  async wiql(query) {
-    const url = this.baseUrl() + '/_apis/wit/wiql?api-version=' + CONFIG.devops.apiVersion;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: this.headers(),
-      body: JSON.stringify({ query }),
-    });
-    if (!resp.ok) throw new Error('WIQL error: ' + resp.status);
-    return resp.json();
+    const data = await resp.json().catch(() => null);
+
+    if (!resp.ok) {
+      throw new Error(
+        data?.error ||
+        data?.detail ||
+        "Chyba při načítání dat z interního API."
+      );
+    }
+
+    return data;
   },
 
   async getSprints() {
-    const data = await this.request('work/teamsettings/iterations');
-    return (data.value || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      startDate: s.attributes?.startDate,
-      endDate: s.attributes?.finishDate,
-      isCurrent: s.attributes?.timeFrame === 'current',
-    }));
+    try {
+      const data = await this.requestLocal("/api/devops/sprints");
+      return data.sprints || data.value || [];
+    } catch (error) {
+      console.warn("Sprints endpoint zatím není dostupný:", error.message);
+      return [];
+    }
   },
 
-  async getSprintData(sprintId) {
-    // Get current sprint
+  async getSprintData(sprintId = null) {
+    const data = await this.requestLocal("/api/devops/workitems");
+
+    const workItems = data.workItems || [];
+
     const sprints = await this.getSprints();
-    const sprint = sprints.find(s => s.id === sprintId || s.isCurrent) || sprints[0];
+    const sprint =
+      sprints.find(s => s.id === sprintId || s.isCurrent) ||
+      this.detectSprintFromWorkItems(workItems);
 
-    // Get work items via WIQL
-    const iterationPath = sprint.name;
-    const wiqlResult = await this.wiql(
-      "SELECT [System.Id] FROM WorkItems WHERE [System.Parent] = " + CONFIG.devops.helpDeskParentId +
-      " ORDER BY [System.Id]"
-    );
+    return {
+      sprint,
+      workItems,
+      helpdesk: [],
+    };
+  },
 
-    const ids = (wiqlResult.workItems || []).map(w => w.id);
-    const workItems = ids.length ? await this.getWorkItemsBatch(ids) : [];
+  detectSprintFromWorkItems(workItems) {
+    const currentItem =
+      workItems.find(w => w.iterationPath && w.iterationPath.includes("Sprint")) ||
+      workItems[0];
 
-    // Get helpdesk data (Power Apps) - requires token
-    const helpdesk = CONFIG.helpdesk.token ? await this.getHelpdeskData() : [];
-
-    return { sprint, workItems, helpdesk };
+    return {
+      id: "auto-detected",
+      name: currentItem?.iterationPath || "Aktuální sprint",
+      startDate: null,
+      endDate: null,
+      isCurrent: true,
+    };
   },
 
   async getWorkItemsBatch(ids) {
-    // Fetch in batches of 200
-    const results = [];
-    for (let i = 0; i < ids.length; i += 200) {
-      const batch = ids.slice(i, i + 200);
-      const url = this.baseUrl() + '/_apis/wit/workitems?ids=' + batch.join(',') +
-        '&fields=System.Id,System.Title,System.State,System.WorkItemType,System.AssignedTo,Microsoft.VSTS.Common.Priority,System.CreatedDate' +
-        '&api-version=' + CONFIG.devops.apiVersion;
-      const resp = await fetch(url, { headers: this.headers() });
-      const data = await resp.json();
-      results.push(...(data.value || []).map(wi => ({
-        id: wi.id,
-        title: wi.fields['System.Title'],
-        state: wi.fields['System.State'],
-        type: wi.fields['System.WorkItemType'],
-        assignee: wi.fields['System.AssignedTo']?.displayName || '',
-        priority: wi.fields['Microsoft.VSTS.Common.Priority'],
-        createdDate: wi.fields['System.CreatedDate'],
-      })));
+    const data = await this.requestLocal("/api/devops/workitems");
+    const allItems = data.workItems || [];
+
+    if (!ids || !ids.length) {
+      return allItems;
     }
-    return results;
+
+    return allItems.filter(item => ids.includes(item.id));
   },
 
   async getHelpdeskData() {
-    // Power Apps / Dynamics 365 REST API
-    const url = CONFIG.helpdesk.orgUrl + '/api/data/v9.2/gra_requests?$select=gra_requestid,gra_name,gra_urgency,gra_status,gra_devopsid,gra_owner,createdon,gra_resolvedon&$top=500';
-    const resp = await fetch(url, {
-      headers: {
-        'Authorization': 'Bearer ' + CONFIG.helpdesk.token,
-        'OData-MaxVersion': '4.0',
-        'OData-Version': '4.0',
-        'Accept': 'application/json',
-      },
-    });
-    const data = await resp.json();
-    return (data.value || []).map(r => ({
-      devopsId: r.gra_devopsid ? parseInt(r.gra_devopsid) : null,
-      title: r.gra_name,
-      priority: r.gra_urgency,
-      status: r.gra_status,
-      owner: r.gra_owner,
-      createdDate: r.createdon,
-      resolvedDate: r.gra_resolvedon,
-    }));
+    try {
+      const data = await this.requestLocal("/api/helpdesk/requests");
+      return data.helpdesk || data.requests || [];
+    } catch (error) {
+      console.warn("Helpdesk endpoint zatím není dostupný:", error.message);
+      return [];
+    }
   },
 };
