@@ -216,12 +216,71 @@ function lineChart(id,labels,datasets){
   CHARTS[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#94a3b8"}}},scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#94a3b8"},grid:{color:"rgba(255,255,255,.05)"}}}}});
 }
 
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function sprintQuarterFromPath(s){
+  const source = String(s.fullPath || s.id || s.name || "");
+  const match = source.match(/\\(26Q\d)\\/i) || source.match(/\b(26Q\d)\b/i);
+  return match ? match[1].toUpperCase() : "Ostatní";
+}
+
+function quarterSortValue(q){
+  const match = String(q || "").match(/26Q(\d)/i);
+  return match ? Number(match[1]) : 99;
+}
+
 async function loadSprints(){
   const select=document.getElementById("sprintSelect");
   select.innerHTML=`<option value="all">Načítám...</option>`;
+
   const sprints=await DataSource.getSprints();
-  select.innerHTML=sprints.map(s=>`<option value="${s.id}" ${s.isCurrent?"selected":""}>${s.name}${s.count?` (${s.count})`:""}</option>`).join("");
-  if(!select.value&&sprints[0])select.value=sprints[0].id;
+  const allOption=sprints.find(s=>s.id==="all");
+  const realSprints=sprints.filter(s=>s.id!=="all");
+  const selectedSprint=realSprints.find(s=>s.isCurrent)||sprints.find(s=>s.isCurrent)||realSprints[0]||allOption;
+
+  const groups={};
+  realSprints.forEach(s=>{
+    const q=s.quarter||sprintQuarterFromPath(s);
+    if(!groups[q])groups[q]=[];
+    groups[q].push(s);
+  });
+
+  Object.keys(groups).forEach(q=>{
+    groups[q].sort((a,b)=>{
+      const ad=new Date(a.startDate||0).getTime();
+      const bd=new Date(b.startDate||0).getTime();
+      return ad-bd;
+    });
+  });
+
+  const quarters=Object.keys(groups).sort((a,b)=>quarterSortValue(a)-quarterSortValue(b));
+
+  let html="";
+  if(allOption){
+    html+=`<option value="${escapeHtml(allOption.id)}" ${selectedSprint?.id===allOption.id?"selected":""}>${escapeHtml(allOption.name)}${allOption.count?` (${allOption.count})`:""}</option>`;
+  }
+
+  quarters.forEach(q=>{
+    html+=`<optgroup label="${escapeHtml(q)}">`;
+    groups[q].forEach(s=>{
+      const selected=selectedSprint&&s.id===selectedSprint.id?"selected":"";
+      html+=`<option value="${escapeHtml(s.id)}" ${selected}>${escapeHtml(s.name)}${s.count?` (${s.count})`:""}</option>`;
+    });
+    html+=`</optgroup>`;
+  });
+
+  select.innerHTML=html;
+
+  if(selectedSprint){
+    select.value=selectedSprint.id;
+  }
 }
 async function loadData(){
   setLoading(true);
