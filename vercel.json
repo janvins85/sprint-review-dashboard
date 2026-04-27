@@ -3,15 +3,14 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/dashboard.html",
-      "status": 403,
-      "dest": "/api/dashboard"
+      "source": "/",
+      "destination": "/api/dashboard"
     },
     {
-      "src": "/",
-      "dest": "/api/dashboard"
+      "source": "/dashboard.html",
+      "destination": "/api/dashboard"
     }
   ],
   "headers": [
