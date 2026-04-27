@@ -28,6 +28,11 @@ const DataSource = {
     return String(iterationPath).split("\\").pop() || "Bez sprintu";
   },
 
+  sprintQuarter(iterationPath) {
+    const parts = String(iterationPath || "").split("\\").filter(Boolean);
+    return parts.find(p => /^26Q\d$/i.test(p)) || "";
+  },
+
   stripHtml(value = "") {
     return String(value)
       .replace(/<br\s*\/?>/gi, "\n")
@@ -49,13 +54,25 @@ const DataSource = {
       .replace(/[\u0300-\u036f]/g, "");
   },
 
-  isPowerAppsSprint(iterationPath = "") {
+  isPowerAppsPath(iterationPath = "") {
     const path = this.normalizeText(iterationPath);
 
     return (
       path.includes("2026 backlog pa") ||
       path.includes("powerapps") ||
       path.includes("power apps")
+    );
+  },
+
+  isRealSprint(iterationPath = "") {
+    if (!this.isPowerAppsPath(iterationPath)) return false;
+
+    const name = this.sprintShortName(iterationPath);
+    const normalizedName = this.normalizeText(name);
+
+    return (
+      /\b\d{1,2}\s*-\s*sprint\b/i.test(normalizedName) &&
+      Boolean(this.parseSprintDateRange(name))
     );
   },
 
@@ -214,6 +231,7 @@ const DataSource = {
 
       iterationPath,
       sprintName: this.sprintShortName(iterationPath),
+      sprintQuarter: this.sprintQuarter(iterationPath),
 
       areaPath,
       priority: item.priority || null,
@@ -304,20 +322,27 @@ const DataSource = {
       .filter(item => item.id);
 
     const sprintRelevantItems = allWorkItems.filter(item =>
-      this.isPowerAppsSprint(item.iterationPath)
+      this.isPowerAppsPath(item.iterationPath)
+    );
+
+    const realSprintItems = sprintRelevantItems.filter(item =>
+      this.isRealSprint(item.iterationPath)
     );
 
     const sprintMap = new Map();
 
-    sprintRelevantItems.forEach(item => {
-      const id = item.iterationPath || "no-sprint";
-      const name = item.iterationPath ? item.sprintName : "Bez sprintu";
+    realSprintItems.forEach(item => {
+      const id = item.iterationPath;
+      const name = item.sprintName;
+      const quarter = item.sprintQuarter;
 
       if (!sprintMap.has(id)) {
         sprintMap.set(id, {
           id,
           name,
+          displayName: quarter ? `${quarter} / ${name}` : name,
           fullPath: item.iterationPath,
+          quarter,
           startDate: null,
           endDate: null,
           isCurrent: false,
@@ -351,12 +376,13 @@ const DataSource = {
     sprintList.sort((a, b) => {
       if (a.isCurrent && !b.isCurrent) return -1;
       if (!a.isCurrent && b.isCurrent) return 1;
-      return (b.sortDate || 0) - (a.sortDate || 0);
+      return (a.sortDate || 0) - (b.sortDate || 0);
     });
 
     const allOption = {
       id: "all",
       name: "Všechny PowerApps tickety",
+      displayName: "Všechny PowerApps tickety",
       fullPath: "",
       startDate: null,
       endDate: null,
@@ -366,7 +392,7 @@ const DataSource = {
     };
 
     return currentSprint
-      ? [sprintList[0], allOption, ...sprintList.slice(1)]
+      ? [currentSprint, allOption, ...sprintList.filter(s => s.id !== currentSprint.id)]
       : [allOption, ...sprintList];
   },
 
@@ -378,7 +404,7 @@ const DataSource = {
       .filter(item => item.id);
 
     const powerAppsWorkItems = allWorkItems.filter(item =>
-      this.isPowerAppsSprint(item.iterationPath)
+      this.isPowerAppsPath(item.iterationPath)
     );
 
     const sprints = await this.getSprints();
@@ -390,6 +416,7 @@ const DataSource = {
       {
         id: "all",
         name: "Všechny PowerApps tickety",
+        displayName: "Všechny PowerApps tickety",
         fullPath: "",
         startDate: null,
         endDate: null,
@@ -429,10 +456,6 @@ const DataSource = {
         helpdeskCount: helpdesk.length,
         planningCount: planningItems.length,
         currentSprint: currentSprint.name,
-        contains1983: allWorkItems.some(item => item.id === 1983),
-        contains1984: allWorkItems.some(item => item.id === 1984),
-        contains1986: allWorkItems.some(item => item.id === 1986),
-        contains1987: allWorkItems.some(item => item.id === 1987),
       },
     };
   },
@@ -443,7 +466,7 @@ const DataSource = {
     const allItems = (data.workItems || [])
       .map(item => this.normalizeWorkItem(item))
       .filter(item => item.id)
-      .filter(item => this.isPowerAppsSprint(item.iterationPath));
+      .filter(item => this.isPowerAppsPath(item.iterationPath));
 
     if (!ids || !ids.length) return this.sortWorkItems(allItems);
 
@@ -457,7 +480,7 @@ const DataSource = {
     return this.sortWorkItems(
       (data.workItems || [])
         .map(item => this.normalizeWorkItem(item))
-        .filter(item => this.isPowerAppsSprint(item.iterationPath))
+        .filter(item => this.isPowerAppsPath(item.iterationPath))
         .filter(item => item.isHelpdesk)
         .map(item => this.normalizeHelpdeskItem(item))
     );
