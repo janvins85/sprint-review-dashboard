@@ -4,8 +4,7 @@ export default async function handler(req, res) {
   const project = process.env.AZURE_DEVOPS_PROJECT;
   const apiVersion = process.env.AZURE_DEVOPS_API_VERSION || "7.1";
 
-  const helpdeskAreaKeywords = ["helpdesk", "pa projekty", "editorial"];
-  const debugTicketIds = [1984];
+  const helpDeskParentId = Number(process.env.AZURE_DEVOPS_HELPDESK_PARENT_ID || 1513);
 
   if (!pat || !org || !project) {
     return res.status(500).json({
@@ -29,7 +28,6 @@ export default async function handler(req, res) {
             SELECT [System.Id]
             FROM WorkItems
             WHERE [System.TeamProject] = '${project}'
-              AND [System.WorkItemType] <> ''
             ORDER BY [System.ChangedDate] DESC
           `
         }),
@@ -45,16 +43,16 @@ export default async function handler(req, res) {
     }
 
     const wiqlData = await wiqlResponse.json();
+    const ids = Array.from(
+      new Set((wiqlData.workItems || []).map(item => item.id))
+    );
 
-    const idsFromWiql = (wiqlData.workItems || []).map(item => item.id);
-    const ids = Array.from(new Set([...debugTicketIds, ...idsFromWiql]));
-
-    if (ids.length === 0) {
+    if (!ids.length) {
       return res.status(200).json({
         count: 0,
         workItems: [],
         helpdesk: [],
-        planningItems: []
+        planningItems: [],
       });
     }
 
@@ -92,7 +90,8 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             ids: batchIds,
-            fields
+            fields,
+            errorPolicy: "Omit",
           }),
         }
       );
@@ -112,28 +111,15 @@ export default async function handler(req, res) {
     const workItems = allDetails.map(item => {
       const f = item.fields || {};
 
-      const parentId = f["System.Parent"] ? Number(f["System.Parent"]) : null;
+      const parentId =
+        f["System.Parent"] !== undefined && f["System.Parent"] !== null
+          ? Number(f["System.Parent"])
+          : null;
 
-      const areaPath = f["System.AreaPath"] || "";
-      const areaPathLower = areaPath.toLowerCase();
-
-      const tags = f["System.Tags"] || "";
-      const tagsLower = tags.toLowerCase();
-
-      const title = f["System.Title"] || "";
-      const titleLower = title.toLowerCase();
-
-      const type = f["System.WorkItemType"] || "";
-
-      const isHelpdesk =
-        helpdeskAreaKeywords.some(keyword => areaPathLower.includes(keyword)) ||
-        tagsLower.includes("helpdesk") ||
-        tagsLower.includes("powerapps") ||
-        tagsLower.includes("power apps") ||
-        titleLower.includes("helpdesk") ||
-        titleLower.includes("hd") ||
-        titleLower.includes("b2c") ||
-        titleLower.includes("navi");
+      // Jediné správné pravidlo:
+      // Helpdesk ticket = pouze ticket s parentem 1513.
+      // Vše ostatní = ručně založený / plánovací DevOps ticket.
+      const isHelpdesk = parentId === helpDeskParentId;
 
       const assignedTo =
         f["System.AssignedTo"]?.displayName ||
@@ -142,78 +128,76 @@ export default async function handler(req, res) {
 
       const closedDate = f["Microsoft.VSTS.Common.ClosedDate"] || null;
       const createdDate = f["System.CreatedDate"] || null;
+      const originalEstimate = f["Microsoft.VSTS.Scheduling.OriginalEstimate"];
+      const completedWork = f["Microsoft.VSTS.Scheduling.CompletedWork"];
+      const remainingWork = f["Microsoft.VSTS.Scheduling.RemainingWork"];
 
       return {
-        id: item.id,
+        id: Number(item.id),
+        devopsId: Number(item.id),
         url: item.url,
 
         parentId,
         isHelpdesk,
 
-        title,
+        title: f["System.Title"] || "",
         state: f["System.State"] || "",
-        type,
+        type: f["System.WorkItemType"] || "",
 
         assignedTo,
         assignee: assignedTo,
+        owner: assignedTo,
 
         priority: f["Microsoft.VSTS.Common.Priority"] || null,
-        tags,
+        tags: f["System.Tags"] || "",
 
         createdDate,
         changedDate: f["System.ChangedDate"] || null,
-
-        devOpsClosedDate: closedDate,
         closedDate,
+        devOpsClosedDate: closedDate,
 
-        helpdeskResolvedDate: isHelpdesk ? closedDate : null,
         resolvedDate: isHelpdesk ? closedDate : null,
+        helpdeskResolvedDate: isHelpdesk ? closedDate : null,
 
         iterationPath: f["System.IterationPath"] || "",
-        areaPath,
+        areaPath: f["System.AreaPath"] || "",
 
-        originalEstimate: f["Microsoft.VSTS.Scheduling.OriginalEstimate"] || 0,
-        completedWork: f["Microsoft.VSTS.Scheduling.CompletedWork"] || 0,
-        remainingWork: f["Microsoft.VSTS.Scheduling.RemainingWork"] || 0,
+        originalEstimate: originalEstimate ?? null,
+        completedWork: completedWork ?? 0,
+        remainingWork: remainingWork ?? 0,
 
-        estimatedHours: f["Microsoft.VSTS.Scheduling.OriginalEstimate"] ?? null,
-        completedHours: f["Microsoft.VSTS.Scheduling.CompletedWork"] || 0,
-        remainingHours: f["Microsoft.VSTS.Scheduling.RemainingWork"] || 0,
-
-        owner: assignedTo,
-        devopsId: item.id
+        estimatedHours: originalEstimate ?? null,
+        completedHours: completedWork ?? 0,
+        remainingHours: remainingWork ?? 0,
       };
     });
 
     const helpdesk = workItems
       .filter(item => item.isHelpdesk)
       .map(item => ({
-        devopsId: item.id,
-        id: item.id,
-        title: item.title,
-        priority: item.priority,
+        ...item,
         status: item.state,
         owner: item.assignee,
-        createdDate: item.createdDate,
-        resolvedDate: item.resolvedDate,
-        closedDate: item.closedDate,
-        iterationPath: item.iterationPath,
-        areaPath: item.areaPath,
-        tags: item.tags
+        resolvedDate: item.closedDate,
       }));
 
     const planningItems = workItems.filter(item => !item.isHelpdesk);
 
     return res.status(200).json({
       count: workItems.length,
+      helpDeskParentId,
       debug: {
         loadedIds: ids.length,
+        containsTicket1983: workItems.some(item => item.id === 1983),
         containsTicket1984: workItems.some(item => item.id === 1984),
-        ticket1984: workItems.find(item => item.id === 1984) || null
+        ticket1983: workItems.find(item => item.id === 1983) || null,
+        ticket1984: workItems.find(item => item.id === 1984) || null,
+        helpdeskCount: helpdesk.length,
+        planningCount: planningItems.length,
       },
       workItems,
       helpdesk,
-      planningItems
+      planningItems,
     });
 
   } catch (error) {
