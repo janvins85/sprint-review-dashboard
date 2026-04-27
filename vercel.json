@@ -3,10 +3,15 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/api/auth?path=index.html"
+      "src": "/dashboard.html",
+      "status": 403,
+      "dest": "/api/dashboard"
+    },
+    {
+      "src": "/",
+      "dest": "/api/dashboard"
     }
   ],
   "headers": [
