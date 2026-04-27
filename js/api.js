@@ -2,6 +2,11 @@
  * DataSource wrapper pro Sprint Review Dashboard
  * Frontend volá pouze vlastní Vercel endpointy /api/...
  * Token není nikdy ve frontendu ani v config.js.
+ *
+ * Zásadní pravidlo:
+ * - Review zobrazuje VŠECHNY tickety z API.
+ * - Helpdesk = pouze tickety s parentId 1513 / isHelpdesk = true.
+ * - Vše ostatní = ručně založené / plánovací DevOps tickety.
  */
 
 const DataSource = {
@@ -25,32 +30,46 @@ const DataSource = {
   },
 
   sprintShortName(iterationPath) {
-    if (!iterationPath) return "Aktuální sprint";
-    return String(iterationPath).split("\\").pop();
-  },
-
-  normalizeText(value) {
-    return String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+    if (!iterationPath) return "Bez sprintu";
+    return String(iterationPath).split("\\").pop() || "Bez sprintu";
   },
 
   normalizeWorkItem(item) {
-    const assignee = item.assignee || item.assignedTo || "Nepřiřazeno";
-    const closedDate = item.closedDate || item.devOpsClosedDate || null;
-    const isHelpdesk = Boolean(item.isHelpdesk);
+    const id = Number(item.id || item.devopsId);
+    const parentId =
+      item.parentId !== undefined && item.parentId !== null
+        ? Number(item.parentId)
+        : null;
+
+    const isHelpdesk =
+      item.isHelpdesk === true ||
+      parentId === 1513;
+
+    const assignee =
+      item.assignee ||
+      item.assignedTo ||
+      item.owner ||
+      "Nepřiřazeno";
+
+    const closedDate =
+      item.closedDate ||
+      item.devOpsClosedDate ||
+      item.resolvedDate ||
+      item.helpdeskResolvedDate ||
+      null;
+
+    const iterationPath = item.iterationPath || "";
 
     return {
-      id: Number(item.id),
-      url: item.url,
+      id,
+      devopsId: id,
+      url: item.url || "",
 
-      parentId: item.parentId ?? null,
+      parentId,
       isHelpdesk,
 
       title: item.title || "",
-      state: item.state || "",
+      state: item.state || item.status || "",
       type: item.type || "",
 
       assignee,
@@ -60,213 +79,177 @@ const DataSource = {
       createdDate: item.createdDate || null,
       changedDate: item.changedDate || null,
       closedDate,
-
       devOpsClosedDate: item.devOpsClosedDate || closedDate,
-      resolvedDate: item.resolvedDate || item.helpdeskResolvedDate || closedDate,
+      resolvedDate: closedDate,
 
-      iterationPath: item.iterationPath || "",
-      sprintName: this.sprintShortName(item.iterationPath),
+      iterationPath,
+      sprintName: this.sprintShortName(iterationPath),
 
       areaPath: item.areaPath || "",
       priority: item.priority || null,
       tags: item.tags || "",
 
-      estimatedHours: item.estimatedHours ?? item.originalEstimate ?? null,
-      completedHours: item.completedHours ?? item.completedWork ?? 0,
-      remainingHours: item.remainingHours ?? item.remainingWork ?? 0,
+      estimatedHours:
+        item.estimatedHours ??
+        item.originalEstimate ??
+        null,
 
-      originalEstimate: item.originalEstimate ?? item.estimatedHours ?? null,
-      completedWork: item.completedWork ?? item.completedHours ?? 0,
-      remainingWork: item.remainingWork ?? item.remainingHours ?? 0,
+      completedHours:
+        item.completedHours ??
+        item.completedWork ??
+        0,
 
-      devopsId: Number(item.devopsId || item.id),
+      remainingHours:
+        item.remainingHours ??
+        item.remainingWork ??
+        0,
+
+      originalEstimate:
+        item.originalEstimate ??
+        item.estimatedHours ??
+        null,
+
+      completedWork:
+        item.completedWork ??
+        item.completedHours ??
+        0,
+
+      remainingWork:
+        item.remainingWork ??
+        item.remainingHours ??
+        0,
     };
   },
 
   normalizeHelpdeskItem(item) {
-    const normalized = this.normalizeWorkItem(item);
+    const x = this.normalizeWorkItem(item);
 
     return {
-      devopsId: normalized.id,
-      id: normalized.id,
-      title: normalized.title,
-      priority: normalized.priority,
-      status: normalized.state,
-      owner: normalized.assignee,
-      createdDate: normalized.createdDate,
-      resolvedDate: normalized.resolvedDate,
-      closedDate: normalized.closedDate,
-      iterationPath: normalized.iterationPath,
-      areaPath: normalized.areaPath,
-      tags: normalized.tags,
+      ...x,
+      id: x.id,
+      devopsId: x.id,
+      title: x.title,
+      priority: x.priority,
+      status: x.state,
+      owner: x.assignee,
+      createdDate: x.createdDate,
+      resolvedDate: x.closedDate,
+      closedDate: x.closedDate,
       isHelpdesk: true,
     };
   },
 
   async getSprints() {
-    try {
-      const data = await this.requestLocal("/api/devops/workitems");
-      const workItems = (data.workItems || []).map(item =>
-        this.normalizeWorkItem(item)
-      );
+    const data = await this.requestLocal("/api/devops/workitems");
 
-      const sprintMap = new Map();
+    const allWorkItems = (data.workItems || [])
+      .map(item => this.normalizeWorkItem(item))
+      .filter(item => item.id);
 
-      workItems.forEach(item => {
-        if (!item.iterationPath) return;
+    const sprintMap = new Map();
 
-        const name = item.sprintName;
-        const id = item.iterationPath;
+    allWorkItems.forEach(item => {
+      const id = item.iterationPath || "all";
+      const name = item.iterationPath ? item.sprintName : "Bez sprintu";
 
-        if (!sprintMap.has(id)) {
-          sprintMap.set(id, {
-            id,
-            name,
-            fullPath: item.iterationPath,
-            startDate: null,
-            endDate: null,
-            isCurrent: false,
-            count: 0,
-            latestChangedDate: null,
-          });
-        }
-
-        const sprint = sprintMap.get(id);
-        sprint.count += 1;
-
-        if (
-          item.changedDate &&
-          (!sprint.latestChangedDate ||
-            new Date(item.changedDate) > new Date(sprint.latestChangedDate))
-        ) {
-          sprint.latestChangedDate = item.changedDate;
-        }
-      });
-
-      const sprints = Array.from(sprintMap.values())
-        .sort((a, b) => new Date(b.latestChangedDate || 0) - new Date(a.latestChangedDate || 0));
-
-      if (!sprints.length) {
-        return [{
-          id: "all",
-          name: "Všechny tickety",
-          fullPath: "",
+      if (!sprintMap.has(id)) {
+        sprintMap.set(id, {
+          id,
+          name,
+          fullPath: item.iterationPath,
           startDate: null,
           endDate: null,
-          isCurrent: true,
-          count: workItems.length,
-        }];
+          isCurrent: false,
+          count: 0,
+          latestChangedDate: null,
+        });
       }
 
-      sprints[0].isCurrent = true;
-      return sprints;
-    } catch (error) {
-      console.warn("Sprints fallback:", error.message);
+      const sprint = sprintMap.get(id);
+      sprint.count += 1;
 
-      return [{
+      if (
+        item.changedDate &&
+        (!sprint.latestChangedDate ||
+          new Date(item.changedDate) > new Date(sprint.latestChangedDate))
+      ) {
+        sprint.latestChangedDate = item.changedDate;
+      }
+    });
+
+    const sprintList = Array.from(sprintMap.values())
+      .sort((a, b) => new Date(b.latestChangedDate || 0) - new Date(a.latestChangedDate || 0));
+
+    return [
+      {
         id: "all",
         name: "Všechny tickety",
         fullPath: "",
         startDate: null,
         endDate: null,
         isCurrent: true,
-      }];
-    }
+        count: allWorkItems.length,
+      },
+      ...sprintList.map(s => ({ ...s, isCurrent: false })),
+    ];
   },
 
-  async getSprintData(sprintId = null) {
+  async getSprintData(sprintId = "all") {
     const data = await this.requestLocal("/api/devops/workitems");
 
-    const allWorkItems = (data.workItems || []).map(item =>
-      this.normalizeWorkItem(item)
-    );
+    const allWorkItems = (data.workItems || [])
+      .map(item => this.normalizeWorkItem(item))
+      .filter(item => item.id);
 
     const sprints = await this.getSprints();
 
     const currentSprint =
-      sprints.find(s => sprintId && (s.id === sprintId || s.fullPath === sprintId)) ||
-      sprints.find(s => s.isCurrent) ||
-      this.detectSprintFromWorkItems(allWorkItems);
+      sprints.find(s => s.id === sprintId || s.fullPath === sprintId) ||
+      sprints[0] ||
+      {
+        id: "all",
+        name: "Všechny tickety",
+        fullPath: "",
+        startDate: null,
+        endDate: null,
+        isCurrent: true,
+      };
 
-    const sprintWorkItems = this.filterBySprint(allWorkItems, currentSprint);
+    const selectedWorkItems =
+      currentSprint.id === "all"
+        ? allWorkItems
+        : allWorkItems.filter(item => item.iterationPath === currentSprint.fullPath || item.iterationPath === currentSprint.id);
 
-    const helpdesk =
-      (data.helpdesk && data.helpdesk.length)
-        ? data.helpdesk.map(item => this.normalizeHelpdeskItem(item))
-            .filter(item => this.belongsToSprint(item, currentSprint))
-        : sprintWorkItems
-            .filter(item => item.isHelpdesk)
-            .map(item => this.normalizeHelpdeskItem(item));
+    const helpdesk = selectedWorkItems
+      .filter(item => item.isHelpdesk)
+      .map(item => this.normalizeHelpdeskItem(item));
 
-    const helpdeskIds = new Set(helpdesk.map(h => Number(h.devopsId)));
-
-    const planningItems =
-      (data.planningItems && data.planningItems.length)
-        ? data.planningItems.map(item => this.normalizeWorkItem(item))
-            .filter(item => this.belongsToSprint(item, currentSprint))
-        : sprintWorkItems.filter(item => !helpdeskIds.has(Number(item.id)));
+    const planningItems = selectedWorkItems
+      .filter(item => !item.isHelpdesk);
 
     return {
       sprint: currentSprint,
-      workItems: sprintWorkItems,
+      workItems: selectedWorkItems,
       helpdesk,
       planningItems,
-      debug: data.debug || null,
-    };
-  },
-
-  filterBySprint(workItems, sprint) {
-    if (!sprint || !sprint.id || sprint.id === "all") return workItems;
-
-    return workItems.filter(item => this.belongsToSprint(item, sprint));
-  },
-
-  belongsToSprint(item, sprint) {
-    if (!sprint || !sprint.id || sprint.id === "all") return true;
-
-    const itemPath = this.normalizeText(item.iterationPath);
-    const itemSprint = this.normalizeText(item.sprintName);
-    const sprintId = this.normalizeText(sprint.id);
-    const sprintName = this.normalizeText(sprint.name);
-    const sprintFullPath = this.normalizeText(sprint.fullPath);
-
-    return (
-      itemPath === sprintId ||
-      itemPath === sprintFullPath ||
-      itemPath.includes(sprintId) ||
-      itemPath.includes(sprintName) ||
-      itemSprint === sprintName
-    );
-  },
-
-  detectSprintFromWorkItems(workItems) {
-    const sprintCounts = {};
-
-    workItems.forEach(item => {
-      if (!item.iterationPath) return;
-      sprintCounts[item.iterationPath] = (sprintCounts[item.iterationPath] || 0) + 1;
-    });
-
-    const mostCommonSprint = Object.entries(sprintCounts)
-      .sort((a, b) => b[1] - a[1])[0];
-
-    const fullPath = mostCommonSprint ? mostCommonSprint[0] : "";
-
-    return {
-      id: fullPath || "all",
-      name: this.sprintShortName(fullPath),
-      fullPath,
-      startDate: null,
-      endDate: null,
-      isCurrent: true,
+      debug: {
+        ...(data.debug || {}),
+        allCount: allWorkItems.length,
+        selectedCount: selectedWorkItems.length,
+        helpdeskCount: helpdesk.length,
+        planningCount: planningItems.length,
+        contains1983: allWorkItems.some(item => item.id === 1983),
+        contains1984: allWorkItems.some(item => item.id === 1984),
+      },
     };
   },
 
   async getWorkItemsBatch(ids) {
     const data = await this.requestLocal("/api/devops/workitems");
-    const allItems = (data.workItems || []).map(item =>
-      this.normalizeWorkItem(item)
-    );
+
+    const allItems = (data.workItems || [])
+      .map(item => this.normalizeWorkItem(item))
+      .filter(item => item.id);
 
     if (!ids || !ids.length) return allItems;
 
@@ -276,10 +259,6 @@ const DataSource = {
 
   async getHelpdeskData() {
     const data = await this.requestLocal("/api/devops/workitems");
-
-    if (data.helpdesk && data.helpdesk.length) {
-      return data.helpdesk.map(item => this.normalizeHelpdeskItem(item));
-    }
 
     return (data.workItems || [])
       .map(item => this.normalizeWorkItem(item))
