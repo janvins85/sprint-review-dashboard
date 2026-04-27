@@ -1,10 +1,10 @@
 /**
- * Azure DevOps API Wrapper
- * Bezpečná varianta: frontend NEVOLÁ Azure DevOps přímo.
+ * DataSource wrapper pro Sprint Review Dashboard
  * Frontend volá pouze vlastní Vercel endpointy /api/...
+ * Token není nikdy ve frontendu ani v config.js.
  */
 
-const DevOpsAPI = {
+const DataSource = {
   async requestLocal(path, options = {}) {
     const resp = await fetch(path, {
       headers: {
@@ -26,41 +26,130 @@ const DevOpsAPI = {
     return data;
   },
 
+  normalizeWorkItem(item) {
+    return {
+      id: item.id,
+      url: item.url,
+
+      title: item.title || "",
+      state: item.state || "",
+      type: item.type || "",
+
+      // index.html očekává assignee
+      assignee: item.assignee || item.assignedTo || "Nepřiřazeno",
+
+      createdDate: item.createdDate || null,
+      changedDate: item.changedDate || null,
+
+      // index.html očekává closedDate
+      closedDate: item.closedDate || item.devOpsClosedDate || null,
+
+      iterationPath: item.iterationPath || "",
+      areaPath: item.areaPath || "",
+
+      // index.html očekává estimatedHours / completedHours / remainingHours
+      estimatedHours:
+        item.estimatedHours ??
+        item.originalEstimate ??
+        null,
+
+      completedHours:
+        item.completedHours ??
+        item.completedWork ??
+        0,
+
+      remainingHours:
+        item.remainingHours ??
+        item.remainingWork ??
+        0,
+
+      priority: item.priority || null,
+    };
+  },
+
   async getSprints() {
     try {
       const data = await this.requestLocal("/api/devops/sprints");
-      return data.sprints || data.value || [];
+
+      const sprints = data.sprints || data.value || [];
+
+      if (!sprints.length) {
+        return [
+          {
+            id: "auto",
+            name: "Aktuální sprint",
+            startDate: null,
+            endDate: null,
+            isCurrent: true,
+          },
+        ];
+      }
+
+      return sprints;
     } catch (error) {
-      console.warn("Sprints endpoint zatím není dostupný:", error.message);
-      return [];
+      console.warn("Sprints endpoint není dostupný, použije se auto-detekce:", error.message);
+
+      return [
+        {
+          id: "auto",
+          name: "Aktuální sprint",
+          startDate: null,
+          endDate: null,
+          isCurrent: true,
+        },
+      ];
     }
   },
 
   async getSprintData(sprintId = null) {
     const data = await this.requestLocal("/api/devops/workitems");
 
-    const workItems = data.workItems || [];
+    const allWorkItems = (data.workItems || []).map(item =>
+      this.normalizeWorkItem(item)
+    );
 
-    const sprints = await this.getSprints();
-    const sprint =
-      sprints.find(s => s.id === sprintId || s.isCurrent) ||
-      this.detectSprintFromWorkItems(workItems);
+    const currentSprint = this.detectSprintFromWorkItems(allWorkItems, sprintId);
+
+    const sprintName = currentSprint?.name || currentSprint?.iterationPath || "";
+
+    const sprintWorkItems = sprintName && sprintName !== "Aktuální sprint"
+      ? allWorkItems.filter(item => item.iterationPath === sprintName || item.iterationPath.includes(sprintName))
+      : allWorkItems;
+
+    // Zatím nemáme PowerApps endpoint, takže Helpdesk necháme prázdný.
+    const helpdesk = [];
+
+    // Vše bez Helpdesk vazby bereme jako DevOps-only / plánovací práci.
+    const helpdeskIds = new Set(helpdesk.map(h => Number(h.devopsId)));
+
+    const planningItems = sprintWorkItems.filter(item =>
+      !helpdeskIds.has(Number(item.id))
+    );
 
     return {
-      sprint,
-      workItems,
-      helpdesk: [],
+      sprint: currentSprint,
+      workItems: sprintWorkItems,
+      helpdesk,
+      planningItems,
     };
   },
 
-  detectSprintFromWorkItems(workItems) {
-    const currentItem =
-      workItems.find(w => w.iterationPath && w.iterationPath.includes("Sprint")) ||
-      workItems[0];
+  detectSprintFromWorkItems(workItems, sprintId = null) {
+    const sprintCounts = {};
+
+    workItems.forEach(item => {
+      if (!item.iterationPath) return;
+      sprintCounts[item.iterationPath] = (sprintCounts[item.iterationPath] || 0) + 1;
+    });
+
+    const mostCommonSprint = Object.entries(sprintCounts)
+      .sort((a, b) => b[1] - a[1])[0];
+
+    const name = mostCommonSprint ? mostCommonSprint[0] : "Aktuální sprint";
 
     return {
-      id: "auto-detected",
-      name: currentItem?.iterationPath || "Aktuální sprint",
+      id: sprintId || "auto-detected",
+      name,
       startDate: null,
       endDate: null,
       isCurrent: true,
@@ -69,7 +158,9 @@ const DevOpsAPI = {
 
   async getWorkItemsBatch(ids) {
     const data = await this.requestLocal("/api/devops/workitems");
-    const allItems = data.workItems || [];
+    const allItems = (data.workItems || []).map(item =>
+      this.normalizeWorkItem(item)
+    );
 
     if (!ids || !ids.length) {
       return allItems;
@@ -88,3 +179,6 @@ const DevOpsAPI = {
     }
   },
 };
+
+// Kompatibilita, kdyby někde ve starším kódu zůstalo DevOpsAPI
+const DevOpsAPI = DataSource;
