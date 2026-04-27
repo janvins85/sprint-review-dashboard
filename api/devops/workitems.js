@@ -4,6 +4,8 @@ export default async function handler(req, res) {
   const project = process.env.AZURE_DEVOPS_PROJECT;
   const apiVersion = process.env.AZURE_DEVOPS_API_VERSION || "7.1";
 
+  const helpDeskParentId = Number(process.env.AZURE_DEVOPS_HELPDESK_PARENT_ID || 1513);
+
   if (!pat || !org || !project) {
     return res.status(500).json({
       error: "Chybí konfigurace Azure DevOps ve Vercel Environment Variables."
@@ -46,7 +48,9 @@ export default async function handler(req, res) {
     if (ids.length === 0) {
       return res.status(200).json({
         count: 0,
-        workItems: []
+        workItems: [],
+        helpdesk: [],
+        planningItems: []
       });
     }
 
@@ -62,6 +66,7 @@ export default async function handler(req, res) {
           ids,
           fields: [
             "System.Id",
+            "System.Parent",
             "System.Title",
             "System.State",
             "System.AssignedTo",
@@ -69,6 +74,7 @@ export default async function handler(req, res) {
             "System.CreatedDate",
             "System.ChangedDate",
             "Microsoft.VSTS.Common.ClosedDate",
+            "Microsoft.VSTS.Common.Priority",
             "System.IterationPath",
             "System.AreaPath",
             "Microsoft.VSTS.Scheduling.OriginalEstimate",
@@ -92,40 +98,82 @@ export default async function handler(req, res) {
     const workItems = (detailsData.value || []).map(item => {
       const f = item.fields || {};
 
+      const parentId = f["System.Parent"] ? Number(f["System.Parent"]) : null;
+      const isHelpdesk = parentId === helpDeskParentId;
+
+      const assignedTo =
+        f["System.AssignedTo"]?.displayName ||
+        f["System.AssignedTo"]?.uniqueName ||
+        "Nepřiřazeno";
+
+      const closedDate = f["Microsoft.VSTS.Common.ClosedDate"] || null;
+      const createdDate = f["System.CreatedDate"] || null;
+
       return {
         id: item.id,
         url: item.url,
+
+        parentId,
+        isHelpdesk,
 
         title: f["System.Title"] || "",
         state: f["System.State"] || "",
         type: f["System.WorkItemType"] || "",
 
-        assignedTo:
-          f["System.AssignedTo"]?.displayName ||
-          f["System.AssignedTo"]?.uniqueName ||
-          "Nepřiřazeno",
+        assignedTo,
+        assignee: assignedTo,
 
-        createdDate: f["System.CreatedDate"] || null,
+        priority: f["Microsoft.VSTS.Common.Priority"] || null,
+
+        createdDate,
         changedDate: f["System.ChangedDate"] || null,
 
-        // Datum uzavření DevOps ticketu
-        devOpsClosedDate: f["Microsoft.VSTS.Common.ClosedDate"] || null,
+        devOpsClosedDate: closedDate,
+        closedDate,
 
-        // Datum vyřešení / uzavření z Helpdesku se doplní později z PowerApps podle DevOps ID
-        helpdeskResolvedDate: null,
+        helpdeskResolvedDate: isHelpdesk ? closedDate : null,
+        resolvedDate: isHelpdesk ? closedDate : null,
 
         iterationPath: f["System.IterationPath"] || "",
         areaPath: f["System.AreaPath"] || "",
 
         originalEstimate: f["Microsoft.VSTS.Scheduling.OriginalEstimate"] || 0,
         completedWork: f["Microsoft.VSTS.Scheduling.CompletedWork"] || 0,
-        remainingWork: f["Microsoft.VSTS.Scheduling.RemainingWork"] || 0
+        remainingWork: f["Microsoft.VSTS.Scheduling.RemainingWork"] || 0,
+
+        estimatedHours: f["Microsoft.VSTS.Scheduling.OriginalEstimate"] ?? null,
+        completedHours: f["Microsoft.VSTS.Scheduling.CompletedWork"] || 0,
+        remainingHours: f["Microsoft.VSTS.Scheduling.RemainingWork"] || 0,
+
+        owner: assignedTo,
+        devopsId: item.id
       };
     });
 
+    const helpdesk = workItems
+      .filter(item => item.isHelpdesk)
+      .map(item => ({
+        devopsId: item.id,
+        id: item.id,
+        title: item.title,
+        priority: item.priority,
+        status: item.state,
+        owner: item.assignee,
+        createdDate: item.createdDate,
+        resolvedDate: item.resolvedDate,
+        closedDate: item.closedDate,
+        iterationPath: item.iterationPath,
+        areaPath: item.areaPath
+      }));
+
+    const planningItems = workItems.filter(item => !item.isHelpdesk);
+
     return res.status(200).json({
       count: workItems.length,
-      workItems
+      helpDeskParentId,
+      workItems,
+      helpdesk,
+      planningItems
     });
 
   } catch (error) {
