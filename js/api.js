@@ -28,6 +28,75 @@ const DataSource = {
     return String(iterationPath).split("\\").pop() || "Bez sprintu";
   },
 
+  stripHtml(value = "") {
+    return String(value)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/\r/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s+/g, "\n")
+      .trim();
+  },
+
+  normalizeText(value = "") {
+    return this.stripHtml(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  },
+
+  isPowerAppsSprint(iterationPath = "") {
+    const path = this.normalizeText(iterationPath);
+
+    return (
+      path.includes("2026 backlog pa") ||
+      path.includes("powerapps") ||
+      path.includes("power apps")
+    );
+  },
+
+  cleanPersonName(value = "") {
+    return String(value)
+      .replace(/\s+/g, " ")
+      .replace(/^[\s:–—-]+/, "")
+      .replace(/[\s.;,]+$/, "")
+      .trim()
+      .slice(0, 120);
+  },
+
+  extractRequester(text = "") {
+    const clean = this.stripHtml(text);
+    if (!clean) return null;
+
+    const patterns = [
+      /vytvořil\s*[:\-]\s*([^\n\r;]+)/i,
+      /vytvoril\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadavatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /žadatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadatel\s*[:\-]\s*([^\n\r;]+)/i,
+      /zadáno\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
+      /zadano\s*od\s*[:\-]?\s*([^\n\r;]+)/i,
+      /requested\s*by\s*[:\-]\s*([^\n\r;]+)/i,
+      /requester\s*[:\-]\s*([^\n\r;]+)/i,
+      /autor\s*[:\-]\s*([^\n\r;]+)/i,
+      /created\s*by\s*[:\-]\s*([^\n\r;]+)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = clean.match(pattern);
+      if (match && match[1]) {
+        const person = this.cleanPersonName(match[1]);
+        if (person) return person;
+      }
+    }
+
+    return null;
+  },
+
   parseSprintDateRange(text) {
     if (!text) return null;
 
@@ -71,10 +140,12 @@ const DataSource = {
         ? Number(item.parentId)
         : null;
 
+    const areaPath = item.areaPath || "";
+
     const isHelpdesk =
       item.isHelpdesk === true ||
       parentId === 1513 ||
-      String(item.areaPath || "").toLowerCase().includes("helpdesk");
+      String(areaPath).toLowerCase().includes("helpdesk");
 
     const assignee =
       item.assignee ||
@@ -82,11 +153,17 @@ const DataSource = {
       item.owner ||
       "Nepřiřazeno";
 
+    const parsedRequester =
+      item.parsedRequester ||
+      this.extractRequester(item.reproSteps || "") ||
+      this.extractRequester(item.description || "") ||
+      null;
+
     const requester =
       item.requester ||
       item.requestedBy ||
       item.author ||
-      item.parsedRequester ||
+      parsedRequester ||
       item.createdByName ||
       item.createdBy ||
       "Neznámý zadavatel";
@@ -124,7 +201,7 @@ const DataSource = {
       requester,
       requestedBy: requester,
       author: requester,
-      parsedRequester: item.parsedRequester || null,
+      parsedRequester,
 
       createdBy,
       createdByName: createdBy,
@@ -138,7 +215,7 @@ const DataSource = {
       iterationPath,
       sprintName: this.sprintShortName(iterationPath),
 
-      areaPath: item.areaPath || "",
+      areaPath,
       priority: item.priority || null,
       tags: item.tags || "",
 
@@ -226,9 +303,13 @@ const DataSource = {
       .map(item => this.normalizeWorkItem(item))
       .filter(item => item.id);
 
+    const sprintRelevantItems = allWorkItems.filter(item =>
+      this.isPowerAppsSprint(item.iterationPath)
+    );
+
     const sprintMap = new Map();
 
-    allWorkItems.forEach(item => {
+    sprintRelevantItems.forEach(item => {
       const id = item.iterationPath || "no-sprint";
       const name = item.iterationPath ? item.sprintName : "Bez sprintu";
 
@@ -275,12 +356,12 @@ const DataSource = {
 
     const allOption = {
       id: "all",
-      name: "Všechny tickety",
+      name: "Všechny PowerApps tickety",
       fullPath: "",
       startDate: null,
       endDate: null,
       isCurrent: !currentSprint,
-      count: allWorkItems.length,
+      count: sprintRelevantItems.length,
       sortDate: Number.MAX_SAFE_INTEGER,
     };
 
@@ -296,6 +377,10 @@ const DataSource = {
       .map(item => this.normalizeWorkItem(item))
       .filter(item => item.id);
 
+    const powerAppsWorkItems = allWorkItems.filter(item =>
+      this.isPowerAppsSprint(item.iterationPath)
+    );
+
     const sprints = await this.getSprints();
 
     const currentSprint =
@@ -304,7 +389,7 @@ const DataSource = {
       sprints[0] ||
       {
         id: "all",
-        name: "Všechny tickety",
+        name: "Všechny PowerApps tickety",
         fullPath: "",
         startDate: null,
         endDate: null,
@@ -313,8 +398,8 @@ const DataSource = {
 
     const selectedWorkItems =
       currentSprint.id === "all"
-        ? allWorkItems
-        : allWorkItems.filter(item =>
+        ? powerAppsWorkItems
+        : powerAppsWorkItems.filter(item =>
             item.iterationPath === currentSprint.fullPath ||
             item.iterationPath === currentSprint.id
           );
@@ -339,6 +424,7 @@ const DataSource = {
       debug: {
         ...(data.debug || {}),
         allCount: allWorkItems.length,
+        powerAppsCount: powerAppsWorkItems.length,
         selectedCount: sortedSelected.length,
         helpdeskCount: helpdesk.length,
         planningCount: planningItems.length,
@@ -356,7 +442,8 @@ const DataSource = {
 
     const allItems = (data.workItems || [])
       .map(item => this.normalizeWorkItem(item))
-      .filter(item => item.id);
+      .filter(item => item.id)
+      .filter(item => this.isPowerAppsSprint(item.iterationPath));
 
     if (!ids || !ids.length) return this.sortWorkItems(allItems);
 
@@ -370,6 +457,7 @@ const DataSource = {
     return this.sortWorkItems(
       (data.workItems || [])
         .map(item => this.normalizeWorkItem(item))
+        .filter(item => this.isPowerAppsSprint(item.iterationPath))
         .filter(item => item.isHelpdesk)
         .map(item => this.normalizeHelpdeskItem(item))
     );
