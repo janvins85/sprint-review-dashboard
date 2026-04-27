@@ -13,7 +13,6 @@ export default async function handler(req, res) {
   const auth = Buffer.from(":" + pat).toString("base64");
 
   try {
-    // 1) Najdeme work item ID
     const wiqlResponse = await fetch(
       `https://dev.azure.com/${org}/${project}/_apis/wit/wiql?api-version=${apiVersion}`,
       {
@@ -35,7 +34,10 @@ export default async function handler(req, res) {
 
     if (!wiqlResponse.ok) {
       const text = await wiqlResponse.text();
-      return res.status(wiqlResponse.status).json({ error: text });
+      return res.status(wiqlResponse.status).json({
+        error: "Nepodařilo se načíst seznam work itemů z Azure DevOps.",
+        detail: text
+      });
     }
 
     const wiqlData = await wiqlResponse.json();
@@ -48,7 +50,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2) Načteme detailní data podle ID
     const detailsResponse = await fetch(
       `https://dev.azure.com/${org}/${project}/_apis/wit/workitemsbatch?api-version=${apiVersion}`,
       {
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
             "System.WorkItemType",
             "System.CreatedDate",
             "System.ChangedDate",
-            "System.ClosedDate",
+            "Microsoft.VSTS.Common.ClosedDate",
             "System.IterationPath",
             "System.AreaPath",
             "Microsoft.VSTS.Scheduling.OriginalEstimate",
@@ -80,7 +81,10 @@ export default async function handler(req, res) {
 
     if (!detailsResponse.ok) {
       const text = await detailsResponse.text();
-      return res.status(detailsResponse.status).json({ error: text });
+      return res.status(detailsResponse.status).json({
+        error: "Nepodařilo se načíst detailní data work itemů z Azure DevOps.",
+        detail: text
+      });
     }
 
     const detailsData = await detailsResponse.json();
@@ -103,7 +107,12 @@ export default async function handler(req, res) {
 
         createdDate: f["System.CreatedDate"] || null,
         changedDate: f["System.ChangedDate"] || null,
-        closedDate: f["System.ClosedDate"] || null,
+
+        // Datum uzavření DevOps ticketu
+        devOpsClosedDate: f["Microsoft.VSTS.Common.ClosedDate"] || null,
+
+        // Datum vyřešení / uzavření z Helpdesku se doplní později z PowerApps podle DevOps ID
+        helpdeskResolvedDate: null,
 
         iterationPath: f["System.IterationPath"] || "",
         areaPath: f["System.AreaPath"] || "",
@@ -121,7 +130,8 @@ export default async function handler(req, res) {
 
   } catch (error) {
     return res.status(500).json({
-      error: error.message
+      error: "Neočekávaná chyba při načítání Azure DevOps dat.",
+      detail: error.message
     });
   }
 }
