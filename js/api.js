@@ -54,28 +54,6 @@ const DataSource = {
       .replace(/[\u0300-\u036f]/g, "");
   },
 
-  isPowerAppsPath(iterationPath = "") {
-    const path = this.normalizeText(iterationPath);
-
-    return (
-      path.includes("2026 backlog pa") ||
-      path.includes("powerapps") ||
-      path.includes("power apps")
-    );
-  },
-
-  isRealSprint(iterationPath = "") {
-    if (!this.isPowerAppsPath(iterationPath)) return false;
-
-    const name = this.sprintShortName(iterationPath);
-    const normalizedName = this.normalizeText(name);
-
-    return (
-      /\b\d{1,2}\s*-\s*sprint\b/i.test(normalizedName) &&
-      Boolean(this.parseSprintDateRange(name))
-    );
-  },
-
   cleanPersonName(value = "") {
     return String(value)
       .replace(/\s+/g, " ")
@@ -114,41 +92,6 @@ const DataSource = {
     return null;
   },
 
-  parseSprintDateRange(text) {
-    if (!text) return null;
-
-    const normalized = String(text).replace(/\s+/g, " ");
-    const match = normalized.match(/(\d{1,2})\.(\d{1,2})\.?\s*-\s*(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-
-    if (!match) return null;
-
-    const [, sd, sm, ed, em, year] = match;
-
-    const start = new Date(Number(year), Number(sm) - 1, Number(sd));
-    const end = new Date(Number(year), Number(em) - 1, Number(ed), 23, 59, 59, 999);
-
-    if (isNaN(start) || isNaN(end)) return null;
-
-    return { start, end };
-  },
-
-  getSprintSortDate(sprint) {
-    const range = this.parseSprintDateRange(sprint.name) || this.parseSprintDateRange(sprint.fullPath);
-    if (range) return range.start.getTime();
-
-    if (sprint.latestChangedDate) return new Date(sprint.latestChangedDate).getTime();
-
-    return 0;
-  },
-
-  isCurrentSprintByDate(sprint) {
-    const range = this.parseSprintDateRange(sprint.name) || this.parseSprintDateRange(sprint.fullPath);
-    if (!range) return false;
-
-    const now = new Date();
-    return now >= range.start && now <= range.end;
-  },
-
   normalizeWorkItem(item) {
     const id = Number(item.id || item.devopsId);
 
@@ -181,14 +124,7 @@ const DataSource = {
       item.requestedBy ||
       item.author ||
       parsedRequester ||
-      item.createdByName ||
-      item.createdBy ||
       "Neznámý zadavatel";
-
-    const createdBy =
-      item.createdBy ||
-      item.createdByName ||
-      null;
 
     const closedDate =
       item.closedDate ||
@@ -220,8 +156,8 @@ const DataSource = {
       author: requester,
       parsedRequester,
 
-      createdBy,
-      createdByName: createdBy,
+      createdBy: item.createdBy || item.createdByName || null,
+      createdByName: item.createdByName || item.createdBy || null,
 
       createdDate: item.createdDate || null,
       changedDate: item.changedDate || null,
@@ -240,35 +176,13 @@ const DataSource = {
       description: item.description || "",
       reproSteps: item.reproSteps || "",
 
-      estimatedHours:
-        item.estimatedHours ??
-        item.originalEstimate ??
-        null,
+      estimatedHours: item.estimatedHours ?? item.originalEstimate ?? null,
+      completedHours: item.completedHours ?? item.completedWork ?? 0,
+      remainingHours: item.remainingHours ?? item.remainingWork ?? 0,
 
-      completedHours:
-        item.completedHours ??
-        item.completedWork ??
-        0,
-
-      remainingHours:
-        item.remainingHours ??
-        item.remainingWork ??
-        0,
-
-      originalEstimate:
-        item.originalEstimate ??
-        item.estimatedHours ??
-        null,
-
-      completedWork:
-        item.completedWork ??
-        item.completedHours ??
-        0,
-
-      remainingWork:
-        item.remainingWork ??
-        item.remainingHours ??
-        0,
+      originalEstimate: item.originalEstimate ?? item.estimatedHours ?? null,
+      completedWork: item.completedWork ?? item.completedHours ?? 0,
+      remainingWork: item.remainingWork ?? item.remainingHours ?? 0,
     };
   },
 
@@ -315,69 +229,43 @@ const DataSource = {
   },
 
   async getSprints() {
-    const data = await this.requestLocal("/api/devops/workitems");
+    const sprintData = await this.requestLocal("/api/devops/sprints");
+    const workData = await this.requestLocal("/api/devops/workitems");
 
-    const allWorkItems = (data.workItems || [])
+    const allWorkItems = (workData.workItems || [])
       .map(item => this.normalizeWorkItem(item))
       .filter(item => item.id);
 
-    const sprintRelevantItems = allWorkItems.filter(item =>
-      this.isPowerAppsPath(item.iterationPath)
-    );
+    const sprintsRaw = sprintData.sprints || [];
 
-    const realSprintItems = sprintRelevantItems.filter(item =>
-      this.isRealSprint(item.iterationPath)
-    );
-
-    const sprintMap = new Map();
-
-    realSprintItems.forEach(item => {
-      const id = item.iterationPath;
-      const name = item.sprintName;
-      const quarter = item.sprintQuarter;
-
-      if (!sprintMap.has(id)) {
-        sprintMap.set(id, {
-          id,
-          name,
-          displayName: quarter ? `${quarter} / ${name}` : name,
-          fullPath: item.iterationPath,
-          quarter,
-          startDate: null,
-          endDate: null,
-          isCurrent: false,
-          count: 0,
-          latestChangedDate: null,
-        });
-      }
-
-      const sprint = sprintMap.get(id);
-      sprint.count += 1;
-
-      if (
-        item.changedDate &&
-        (!sprint.latestChangedDate ||
-          new Date(item.changedDate) > new Date(sprint.latestChangedDate))
-      ) {
-        sprint.latestChangedDate = item.changedDate;
-      }
+    const realSprints = sprintsRaw.filter(s => {
+      const name = this.normalizeText(s.name);
+      return /\b\d{1,2}\s*-\s*sprint\b/i.test(name);
     });
 
-    let sprintList = Array.from(sprintMap.values());
+    const sprintList = realSprints.map(sprint => {
+      const count = allWorkItems.filter(item =>
+        item.iterationPath === sprint.fullPath ||
+        item.iterationPath === sprint.id
+      ).length;
 
-    sprintList = sprintList.map(sprint => ({
-      ...sprint,
-      isCurrent: this.isCurrentSprintByDate(sprint),
-      sortDate: this.getSprintSortDate(sprint),
-    }));
+      return {
+        id: sprint.fullPath || sprint.id,
+        name: sprint.name,
+        displayName: sprint.name,
+        fullPath: sprint.fullPath || sprint.id,
+        startDate: sprint.startDate,
+        endDate: sprint.endDate,
+        isCurrent: sprint.isCurrent === true || sprint.timeFrame === "current",
+        timeFrame: sprint.timeFrame || null,
+        count,
+        sortDate: new Date(sprint.startDate || 0).getTime(),
+      };
+    });
+
+    sprintList.sort((a, b) => a.sortDate - b.sortDate);
 
     const currentSprint = sprintList.find(s => s.isCurrent);
-
-    sprintList.sort((a, b) => {
-      if (a.isCurrent && !b.isCurrent) return -1;
-      if (!a.isCurrent && b.isCurrent) return 1;
-      return (a.sortDate || 0) - (b.sortDate || 0);
-    });
 
     const allOption = {
       id: "all",
@@ -387,7 +275,8 @@ const DataSource = {
       startDate: null,
       endDate: null,
       isCurrent: !currentSprint,
-      count: sprintRelevantItems.length,
+      timeFrame: null,
+      count: allWorkItems.length,
       sortDate: Number.MAX_SAFE_INTEGER,
     };
 
@@ -402,10 +291,6 @@ const DataSource = {
     const allWorkItems = (data.workItems || [])
       .map(item => this.normalizeWorkItem(item))
       .filter(item => item.id);
-
-    const powerAppsWorkItems = allWorkItems.filter(item =>
-      this.isPowerAppsPath(item.iterationPath)
-    );
 
     const sprints = await this.getSprints();
 
@@ -425,8 +310,8 @@ const DataSource = {
 
     const selectedWorkItems =
       currentSprint.id === "all"
-        ? powerAppsWorkItems
-        : powerAppsWorkItems.filter(item =>
+        ? allWorkItems
+        : allWorkItems.filter(item =>
             item.iterationPath === currentSprint.fullPath ||
             item.iterationPath === currentSprint.id
           );
@@ -451,7 +336,6 @@ const DataSource = {
       debug: {
         ...(data.debug || {}),
         allCount: allWorkItems.length,
-        powerAppsCount: powerAppsWorkItems.length,
         selectedCount: sortedSelected.length,
         helpdeskCount: helpdesk.length,
         planningCount: planningItems.length,
@@ -465,8 +349,7 @@ const DataSource = {
 
     const allItems = (data.workItems || [])
       .map(item => this.normalizeWorkItem(item))
-      .filter(item => item.id)
-      .filter(item => this.isPowerAppsPath(item.iterationPath));
+      .filter(item => item.id);
 
     if (!ids || !ids.length) return this.sortWorkItems(allItems);
 
@@ -480,7 +363,6 @@ const DataSource = {
     return this.sortWorkItems(
       (data.workItems || [])
         .map(item => this.normalizeWorkItem(item))
-        .filter(item => this.isPowerAppsPath(item.iterationPath))
         .filter(item => item.isHelpdesk)
         .map(item => this.normalizeHelpdeskItem(item))
     );
