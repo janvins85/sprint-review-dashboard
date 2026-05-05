@@ -168,6 +168,16 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 let DATA = null;
 let CHARTS = {};
 
+function isCarryOver(x) {
+  // Check for "Sprint 01" tag
+  if (x.tags && String(x.tags).toLowerCase().includes('sprint 01')) return true;
+  // Fallback: known IDs moved from sprint 01 to sprint 02
+  const carryOverIds = [1494, 1510, 1614, 1803, 1832, 1927, 1967, 1991, 1992];
+  return carryOverIds.includes(Number(x.id));
+}
+function badgeCarryOver(x) {
+  return isCarryOver(x) ? '<span class="badge b-teal" title="Presunuto ze sprintu 01">Sprint 01</span>' : '';
+}
 function setLoading(on){const b=document.getElementById("loadingBar");b.classList.toggle("active",on);if(!on){b.style.width="100%";setTimeout(()=>b.style.width="0",300);}}
 function showTab(name,btn){document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.getElementById("tab-"+name).classList.add("active");btn.classList.add("active");}
 function fmt(n,d=0){if(n===null||n===undefined||isNaN(n))return "--";return Number(n).toLocaleString("cs-CZ",{minimumFractionDigits:d,maximumFractionDigits:d});}
