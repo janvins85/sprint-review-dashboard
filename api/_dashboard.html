@@ -39,7 +39,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 .b-green{background:rgba(16,185,129,.15);color:#6ee7b7}.b-yellow{background:rgba(245,158,11,.15);color:#fde68a}.b-red{background:rgba(239,68,68,.15);color:#fca5a5}.b-blue{background:rgba(59,130,246,.15);color:#93c5fd}.b-gray{background:rgba(107,114,128,.2);color:#cbd5e1}.b-orange{background:rgba(249,115,22,.15);color:#fdba74}.b-purple{background:rgba(139,92,246,.15);color:#c4b5fd}
 .footer{border-top:1px solid var(--border);background:var(--bg2);padding:16px 32px;text-align:center;color:var(--text2);font-size:.8rem;margin-top:30px}
 .loading{height:3px;background:var(--blue);width:0}.loading.active{animation:load 1.4s infinite}@keyframes load{0%{width:0}60%{width:75%}100%{width:100%}}
-.small{font-size:.78rem;color:var(--text2)}a{color:#93c5fd;text-decoration:none} .b-teal{background:rgba(20,184,166,.15);color:#5eead4} 
+.small{font-size:.78rem;color:var(--text2)}a{color:#93c5fd;text-decoration:none} .b-teal{background:rgba(20,184,166,.15);color:#5eead4}
 </style>
 </head>
 
@@ -48,11 +48,11 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 
 <header class="header">
   <div>
-    <h1>ð Sprint Review Dashboard</h1>
-    <p>Azure DevOps Ã Helpdesk Ã plÃ¡novanÃ¡ prÃ¡ce</p>
+    <h1>🚀 Sprint Review Dashboard</h1>
+    <p>Azure DevOps × Helpdesk × plánovaná práce</p>
   </div>
   <div class="header-right">
-    <strong id="sprintName">NaÄÃ­tÃ¡m sprint...</strong>
+    <strong id="sprintName">Načítám sprint...</strong>
     <span id="generatedAt"></span>
   </div>
 </header>
@@ -60,53 +60,58 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 <div class="controls">
   <label class="small">Sprint:</label>
   <select id="sprintSelect"></select>
-  <button onclick="loadData()">â» Obnovit data</button>
+  <button onclick="loadData()">↻ Obnovit data</button>
   <input id="searchBox" placeholder="Hledat ticket / ID..." oninput="renderTables()" />
   <span id="lastUpdated" class="small"></span>
 </div>
 
 <main class="main">
   <section class="kpis">
-    <div class="kpi"><div id="kpiTotal" class="v blue">--</div><div class="l">Celkem</div><div class="s">HD + plÃ¡n</div></div>
+    <div class="kpi"><div id="kpiTotal" class="v blue">--</div><div class="l">Celkem</div><div class="s">HD + plán</div></div>
     <div class="kpi"><div id="kpiHD" class="v green">--</div><div class="l">Helpdesk</div><div class="s">z Power Apps / Flow</div></div>
-    <div class="kpi"><div id="kpiPlanning" class="v orange">--</div><div class="l">PlÃ¡n</div><div class="s">ruÄnÄ v DevOps</div></div>
-    <div class="kpi"><div id="kpiClosed" class="v green">--</div><div class="l">UzavÅeno</div><div class="s" id="kpiClosedSub">--</div></div>
-    <div class="kpi"><div id="kpiActive" class="v yellow">--</div><div class="l">ProbÃ­hÃ¡</div><div class="s">Active</div></div>
-    <div class="kpi"><div id="kpiOpen" class="v red">--</div><div class="l">OtevÅeno</div><div class="s">New / To Do</div></div>
+    <div class="kpi"><div id="kpiPlanning" class="v orange">--</div><div class="l">Plán</div><div class="s">ručně v DevOps</div></div>
+    <div class="kpi"><div id="kpiClosed" class="v green">--</div><div class="l">Uzavřeno</div><div class="s" id="kpiClosedSub">--</div></div>
+    <div class="kpi"><div id="kpiActive" class="v yellow">--</div><div class="l">Probíhá</div><div class="s">Active</div></div>
+    <div class="kpi"><div id="kpiOpen" class="v red">--</div><div class="l">Otevřeno</div><div class="s">New / To Do</div></div>
     <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z předch. sprintu</div><div class="s">Přesun ze sprint 01</div></div><div class="kpi"><div id="kpiEstimate" class="v purple">--</div><div class="l">Odhad</div><div class="s">hodiny</div></div>
-    <div class="kpi"><div id="kpiCompleted" class="v blue">--</div><div class="l">OdpracovÃ¡no</div><div class="s">hodiny</div></div>
+    <div class="kpi"><div id="kpiCompleted" class="v blue">--</div><div class="l">Odpracováno</div><div class="s">hodiny</div></div>
   </section>
 
   <section class="summary">
-    <strong>ManaÅ¾erskÃ© shrnutÃ­</strong>
-    <div id="summaryText">NaÄÃ­tÃ¡m data...</div>
+    <strong>Manažerské shrnutí</strong>
+    <div id="summaryText">Načítám data...</div>
   </section>
 
   <div class="tabs">
-    <button class="tab active" onclick="showTab('overview',this)">PÅehled</button>
+    <button class="tab active" onclick="showTab('overview',this)">Přehled</button>
     <button class="tab" onclick="showTab('helpdeskAnalytics',this)">HD analytika</button>
     <button class="tab" onclick="showTab('helpdesk',this)">Helpdesk</button>
-    <button class="tab" onclick="showTab('planning',this)">DevOps plÃ¡n</button>
+    <button class="tab" onclick="showTab('planning',this)">DevOps plán</button>
     <button class="tab" onclick="showTab('areas',this)">Oblasti</button>
-    <button class="tab" onclick="showTab('tickets',this)">VÅ¡echny tickety</button>
+    <button class="tab" onclick="showTab('tickets',this)">Všechny tickety</button>
   </div>
 
   <section id="tab-overview" class="tab-content active">
+    <div id="carryOverSummary" class="card" style="margin-bottom:20px;border-left:3px solid var(--orange)"><div class="card-title" style="color:var(--orange)">🔄 Přesun ze sprintu 01</div><p>Načítám...</p></div>
     <div class="grid-3">
-      <div class="card"><div class="card-title">Stavy ticketÅ¯</div><div class="chart"><canvas id="chartStates"></canvas></div></div>
-      <div class="card"><div class="card-title">Helpdesk vs. plÃ¡n</div><div class="chart"><canvas id="chartSplit"></canvas></div></div>
-      <div class="card"><div class="card-title">PrÃ¡ce podle lidÃ­</div><div class="chart"><canvas id="chartPeople"></canvas></div></div>
+      <div class="card"><div class="card-title">Stavy ticketů</div><div class="chart"><canvas id="chartStates"></canvas></div></div>
+      <div class="card"><div class="card-title">Helpdesk vs. plán</div><div class="chart"><canvas id="chartSplit"></canvas></div></div>
+      <div class="card"><div class="card-title">Práce podle lidí</div><div class="chart"><canvas id="chartPeople"></canvas></div></div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card"><div class="card-title">Nové vs. přesun ze sprintu 01</div><div class="chart"><canvas id="chartCarryOver"></canvas></div></div>
+      <div class="card"><div class="card-title">Přesunuté tickety ze sprintu 01</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Název</th><th>Stav</th><th>Vlastník</th></tr></thead><tbody id="carryOverBody"></tbody></table></div></div>
     </div>
   </section>
 
   <section id="tab-helpdeskAnalytics" class="tab-content">
     <div class="grid-2">
-      <div class="card"><div class="card-title">DennÃ­ pÅÃ­rÅ¯stky HD ticketÅ¯</div><div class="chart"><canvas id="chartDailyHD"></canvas></div></div>
-      <div class="card"><div class="card-title">Top zadavatelÃ© poÅ¾adavkÅ¯ do HD</div><div class="chart"><canvas id="chartRequesters"></canvas></div></div>
+      <div class="card"><div class="card-title">Denní přírůstky HD ticketů</div><div class="chart"><canvas id="chartDailyHD"></canvas></div></div>
+      <div class="card"><div class="card-title">Top zadavatelé požadavků do HD</div><div class="chart"><canvas id="chartRequesters"></canvas></div></div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">RozdÄlenÃ­ poÅ¾adavkÅ¯ dle agendy</div><div class="chart"><canvas id="chartAgenda"></canvas></div></div>
-      <div class="card"><div class="card-title">RozdÄlenÃ­ HD dle oblasti</div><div class="chart"><canvas id="chartAreaHD"></canvas></div></div>
+      <div class="card"><div class="card-title">Rozdělení požadavků dle agendy</div><div class="chart"><canvas id="chartAgenda"></canvas></div></div>
+      <div class="card"><div class="card-title">Rozdělení HD dle oblasti</div><div class="chart"><canvas id="chartAreaHD"></canvas></div></div>
     </div>
   </section>
 
@@ -115,7 +120,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
       <div class="card-title">Helpdesk tickety</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>NÃ¡zev</th><th>Stav</th><th>VlastnÃ­k</th><th>Zadavatel</th><th>Priorita</th><th>Agenda</th><th>VytvoÅeno</th><th>UzavÅeno</th><th>Doba</th><th>Sprint</th></tr></thead>
+          <thead><tr><th>ID</th><th>Název</th><th>Stav</th><th>Vlastník</th><th>Zadavatel</th><th>Priorita</th><th>Agenda</th><th>Vytvořeno</th><th>Uzavřeno</th><th>Doba</th><th>Sprint</th></tr></thead>
           <tbody id="helpdeskBody"></tbody>
         </table>
       </div>
@@ -124,10 +129,10 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 
   <section id="tab-planning" class="tab-content">
     <div class="card">
-      <div class="card-title">PlÃ¡novacÃ­ / ruÄnÄ zaloÅ¾enÃ© DevOps tickety</div>
+      <div class="card-title">Plánovací / ručně založené DevOps tickety</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Typ</th><th>NÃ¡zev</th><th>Stav</th><th>Assignee</th><th>Odhad</th><th>Odprac.</th><th>Zbytek</th><th>UzavÅeno</th><th>Sprint</th></tr></thead>
+          <thead><tr><th>ID</th><th>Typ</th><th>Název</th><th>Stav</th><th>Assignee</th><th>Odhad</th><th>Odprac.</th><th>Zbytek</th><th>Uzavřeno</th><th>Sprint</th></tr></thead>
           <tbody id="planningBody"></tbody>
         </table>
       </div>
@@ -136,10 +141,10 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 
   <section id="tab-areas" class="tab-content">
     <div class="card">
-      <div class="card-title">Detail oblastÃ­</div>
+      <div class="card-title">Detail oblastí</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Oblast</th><th>Celkem</th><th>HD</th><th>PlÃ¡n</th><th>UzavÅeno</th><th>AktivnÃ­</th><th>Odhad</th><th>OdpracovÃ¡no</th></tr></thead>
+          <thead><tr><th>Oblast</th><th>Celkem</th><th>HD</th><th>Plán</th><th>Uzavřeno</th><th>Aktivní</th><th>Odhad</th><th>Odpracováno</th></tr></thead>
           <tbody id="areasBody"></tbody>
         </table>
       </div>
@@ -148,10 +153,10 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 
   <section id="tab-tickets" class="tab-content">
     <div class="card">
-      <div class="card-title">VÅ¡echny tickety ve vybranÃ©m sprintu</div>
+      <div class="card-title">Všechny tickety ve vybraném sprintu</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Kategorie</th><th>Typ</th><th>NÃ¡zev</th><th>Stav</th><th>Assignee</th><th>Agenda</th><th>Area</th><th>VytvoÅeno</th><th>UzavÅeno</th></tr></thead>
+          <thead><tr><th>ID</th><th>Kategorie</th><th>Typ</th><th>Název</th><th>Stav</th><th>Assignee</th><th>Agenda</th><th>Area</th><th>Vytvořeno</th><th>Uzavřeno</th></tr></thead>
           <tbody id="ticketsBody"></tbody>
         </table>
       </div>
@@ -160,23 +165,21 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 </main>
 
 <footer class="footer">
-  <p>Sprint Review Dashboard | Å½ivÃ¡ data z Azure DevOps</p>
-  <p>Tokeny a citlivÃ© Ãºdaje jsou uloÅ¾enÃ© pouze ve Vercel Environment Variables.</p>
+  <p>Sprint Review Dashboard | Živá data z Azure DevOps</p>
+  <p>Tokeny a citlivé údaje jsou uložené pouze ve Vercel Environment Variables.</p>
 </footer>
 
 <script>
 let DATA = null;
 let CHARTS = {};
 
-function isCarryOver(x) {
-  // Check for "Sprint 01" tag
-  if (x.tags && String(x.tags).toLowerCase().includes('sprint 01')) return true;
-  // Fallback: known IDs moved from sprint 01 to sprint 02
-  const carryOverIds = [1494, 1510, 1614, 1803, 1832, 1927, 1967, 1991, 1992];
-  return carryOverIds.includes(Number(x.id));
+function isCarryOver(x){
+  if(x.tags&&String(x.tags).toLowerCase().includes('sprint 01'))return true;
+  const ids=[1494,1510,1614,1803,1832,1927,1967,1991,1992];
+  return ids.includes(Number(x.id));
 }
-function badgeCarryOver(x) {
-  return isCarryOver(x) ? '<span class="badge b-teal" title="Presunuto ze sprintu 01">Sprint 01</span>' : '';
+function badgeCarryOver(x){
+  return isCarryOver(x)?'<span class="badge b-teal">Sprint 01</span>':'';
 }
 function setLoading(on){const b=document.getElementById("loadingBar");b.classList.toggle("active",on);if(!on){b.style.width="100%";setTimeout(()=>b.style.width="0",300);}}
 function showTab(name,btn){document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.getElementById("tab-"+name).classList.add("active");btn.classList.add("active");}
@@ -186,7 +189,7 @@ function daysBetween(a,b){if(!a||!b)return null;const x=(new Date(b)-new Date(a)
 function sprintName(path){return (path||"").split("\\").pop() || "--";}
 function link(id){return `<a target="_blank" href="https://dev.azure.com/GradaBookport/CentralniSystem/_workitems/edit/${id}">#${id}</a>`;}
 function badgeState(s){const c=s==="Closed"||s==="Resolved"?"b-green":s==="Active"?"b-yellow":s==="New"?"b-gray":"b-blue";return `<span class="badge ${c}">${s||"--"}</span>`;}
-function badgeCategory(isHelpdesk){return isHelpdesk?`<span class="badge b-blue">Helpdesk</span>`:`<span class="badge b-orange">PlÃ¡n</span>`;}
+function badgeCategory(isHelpdesk){return isHelpdesk?`<span class="badge b-blue">Helpdesk</span>`:`<span class="badge b-orange">Plán</span>`;}
 
 function requester(x){
   return (
@@ -194,7 +197,7 @@ function requester(x){
     x.requestedBy ||
     x.author ||
     x.parsedRequester ||
-    "NeznÃ¡mÃ½ zadavatel"
+    "Neznámý zadavatel"
   );
 }
 
@@ -212,7 +215,7 @@ function agenda(x){
 }
 
 function groupCount(items,fn){
-  const m={};items.forEach(x=>{const k=fn(x)||"NeurÄeno";m[k]=(m[k]||0)+1;});
+  const m={};items.forEach(x=>{const k=fn(x)||"Neurčeno";m[k]=(m[k]||0)+1;});
   return Object.entries(m).sort((a,b)=>b[1]-a[1]);
 }
 
@@ -238,7 +241,7 @@ function escapeHtml(value){
 function sprintQuarterFromPath(s){
   const source = String(s.fullPath || s.id || s.name || "");
   const match = source.match(/\\(26Q\d)\\/i) || source.match(/\b(26Q\d)\b/i);
-  return match ? match[1].toUpperCase() : "OstatnÃ­";
+  return match ? match[1].toUpperCase() : "Ostatní";
 }
 
 function quarterSortValue(q){
@@ -248,7 +251,7 @@ function quarterSortValue(q){
 
 async function loadSprints(){
   const select=document.getElementById("sprintSelect");
-  select.innerHTML=`<option value="all">NaÄÃ­tÃ¡m...</option>`;
+  select.innerHTML=`<option value="all">Načítám...</option>`;
 
   const sprints=await DataSource.getSprints();
   const allOption=sprints.find(s=>s.id==="all");
@@ -306,7 +309,7 @@ async function loadData(){
 function render(){
   const d=DATA||{},wi=d.workItems||[],hd=d.helpdesk||[],pl=d.planningItems||[],sprint=d.sprint||{name:"--"};
   document.getElementById("sprintName").textContent=sprint.name||"--";
-  document.getElementById("generatedAt").textContent="GenerovÃ¡no: "+new Date().toLocaleString("cs-CZ");
+  document.getElementById("generatedAt").textContent="Generováno: "+new Date().toLocaleString("cs-CZ");
 
   const closed=wi.filter(x=>["Closed","Resolved"].includes(x.state)).length;
   const active=wi.filter(x=>x.state==="Active").length;
@@ -318,61 +321,45 @@ function render(){
   document.getElementById("kpiHD").textContent=fmt(hd.length);
   document.getElementById("kpiPlanning").textContent=fmt(pl.length);
   document.getElementById("kpiClosed").textContent=fmt(closed);
-  document.getElementById("kpiClosedSub").textContent=wi.length?Math.round(closed/wi.length*100)+" % dokonÄeno":"--";
+  document.getElementById("kpiClosedSub").textContent=wi.length?Math.round(closed/wi.length*100)+" % dokončeno":"--";
   document.getElementById("kpiActive").textContent=fmt(active);
   document.getElementById("kpiOpen").textContent=fmt(open);
   document.getElementById("kpiEstimate").textContent=fmt(estimate,1)+"h";
   document.getElementById("kpiCompleted").textContent=fmt(completed,1)+"h";
-  
-  const carryOver = wi.filter(x => isCarryOver(x));
-  const carryOverCount = carryOver.length;
-  const carryOverClosed = carryOver.filter(x => ["Closed","Resolved"].includes(x.state)).length;
-  const newItems = wi.filter(x => !isCarryOver(x));
-  document.getElementById("kpiCarryOver").textContent = fmt(carryOverCount);
-  const coEl = document.getElementById("carryOverSummary");
-  if (coEl) {
-    coEl.innerHTML = '<div class="card-title" style="color:var(--orange)">🔄 Přesun ze sprintu 01</div>' +
-      '<p>Ze <strong>sprintu 01 (20.4. – 3.5.2026)</strong> bylo přesunuto <strong>' + carryOverCount + ' aktivních ticketů</strong> do tohoto sprintu. ' +
-      'Z toho je <strong>' + carryOverClosed + ' uzavřeno</strong> a <strong>' + (carryOverCount - carryOverClosed) + ' stále probíhá</strong>. ' +
-      'Nové tickety v tomto sprintu: <strong>' + newItems.length + '</strong>.</p>';
+  const carryOver=wi.filter(x=>isCarryOver(x)),carryOverCount=carryOver.length;
+  document.getElementById("kpiCarryOver").textContent=fmt(carryOverCount);
+  const coEl=document.getElementById("carryOverSummary");if(coEl){
+    const coC=carryOver.filter(x=>["Closed","Resolved"].includes(x.state)).length;
+    coEl.innerHTML='<div class="card-title" style="color:var(--orange)">🔄 Přesun ze sprintu 01</div><p>Ze <strong>sprintu 01 (20.4.–3.5.2026)</strong> bylo přesunuto <strong>'+carryOverCount+' aktivních ticketů</strong>. Uzavřeno: <strong>'+coC+'</strong>, probíhá: <strong>'+(carryOverCount-coC)+'</strong>. Nové: <strong>'+(wi.length-carryOverCount)+'</strong>.</p>';
   }
 
-
-  const people={};wi.forEach(x=>people[x.assignee||"NepÅiÅazeno"]=(people[x.assignee||"NepÅiÅazeno"]||0)+1);
+  const people={};wi.forEach(x=>people[x.assignee||"Nepřiřazeno"]=(people[x.assignee||"Nepřiřazeno"]||0)+1);
   const top=Object.entries(people).sort((a,b)=>b[1]-a[1])[0];
   const hdPct=wi.length?Math.round(hd.length/wi.length*100):0,plPct=wi.length?Math.round(pl.length/wi.length*100):0;
 
   document.getElementById("summaryText").innerHTML=
-    `Ve sprintu <strong>${sprint.name||"--"}</strong> je naÄteno <strong>${wi.length}</strong> DevOps ticketÅ¯. `+
-    `Z toho <strong>${hd.length} (${hdPct} %)</strong> spadÃ¡ do Helpdesku a <strong>${pl.length} (${plPct} %)</strong> tvoÅÃ­ plÃ¡novanÃ¡ / ruÄnÄ zaloÅ¾enÃ¡ prÃ¡ce. `+
-    `UzavÅeno je <strong>${closed}</strong> poloÅ¾ek, aktivnÃ­ch je <strong>${active}</strong> a otevÅenÃ½ch <strong>${open}</strong>. `+
-    `CelkovÃ½ odhad je <strong>${fmt(estimate,1)} h</strong>, odpracovÃ¡no je <strong>${fmt(completed,1)} h</strong>. `+
-    (top?`NejvÃ­ce poloÅ¾ek mÃ¡ aktuÃ¡lnÄ <strong>${top[0]}</strong> (${top[1]}).`:"");
+    `Ve sprintu <strong>${sprint.name||"--"}</strong> je načteno <strong>${wi.length}</strong> DevOps ticketů. `+
+    `Z toho <strong>${hd.length} (${hdPct} %)</strong> spadá do Helpdesku a <strong>${pl.length} (${plPct} %)</strong> tvoří plánovaná / ručně založená práce. `+
+    `Uzavřeno je <strong>${closed}</strong> položek, aktivních je <strong>${active}</strong> a otevřených <strong>${open}</strong>. `+
+    `Celkový odhad je <strong>${fmt(estimate,1)} h</strong>, odpracováno je <strong>${fmt(completed,1)} h</strong>. `+
+    (top?`Nejvíce položek má aktuálně <strong>${top[0]}</strong> (${top[1]}).`:"");
 
   renderCharts(wi,hd,pl,people);
   renderTables();
   renderAreaDetails();
+  renderCarryOverTable();
 }
 
 function renderCharts(wi,hd,pl,people){
   const states=["New","Active","Resolved","Closed"];
   chart("chartStates","doughnut",states,states.map(s=>wi.filter(x=>x.state===s).length),["#6b7280","#f59e0b","#10b981","#059669"]);
-  chart("chartSplit","doughnut",["Helpdesk","PlÃ¡n"],[hd.length,pl.length],["#3b82f6","#f97316"]);
+  chart("chartSplit","doughnut",["Helpdesk","Plán"],[hd.length,pl.length],["#3b82f6","#f97316"]);
   const p=Object.entries(people).sort((a,b)=>b[1]-a[1]).slice(0,8);
   chart("chartPeople","bar",p.map(x=>x[0]),p.map(x=>x[1]),p.map((_,i)=>["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#f97316","#06b6d4","#84cc16"][i%8]));
 
+  const coC=wi.filter(x=>isCarryOver(x)).length;
+  chart("chartCarryOver","doughnut",["Přesun ze spr.01","Nové v spr.02"],[coC,wi.length-coC],["#f97316","#3b82f6"]);
   renderDailyHDChart(hd);
-  
-  // Carry-over vs new chart
-  const coCount = wi.filter(x => isCarryOver(x)).length;
-  const newCount = wi.length - coCount;
-  destroyChart("chartCarryOver");
-  chart("chartCarryOver", "doughnut", 
-    ["Přesun ze sprintu 01", "Nové v tomto sprintu"],
-    [coCount, newCount],
-    ["#f97316", "#3b82f6"]
-  );
-
   const req=groupCount(hd,requester).slice(0,8);
   chart("chartRequesters","bar",req.map(x=>x[0]),req.map(x=>x[1]),req.map((_,i)=>["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#f97316","#06b6d4","#84cc16"][i%8]));
   const ag=groupCount(hd,agenda).slice(0,8);
@@ -383,12 +370,12 @@ function renderCharts(wi,hd,pl,people){
 
 function renderDailyHDChart(hd){
   const dates=hd.map(x=>x.createdDate).filter(Boolean).map(x=>new Date(x)).filter(x=>!isNaN(x));
-  if(!dates.length){lineChart("chartDailyHD",[],[{label:"VytvoÅeno",data:[],borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3}]);return;}
+  if(!dates.length){lineChart("chartDailyHD",[],[{label:"Vytvořeno",data:[],borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3}]);return;}
   const min=new Date(Math.min(...dates)),max=new Date(Math.max(...dates)),days=[];
   for(let d=new Date(min);d<=max;d.setDate(d.getDate()+1))days.push(d.toISOString().split("T")[0]);
   lineChart("chartDailyHD",days.map(x=>x.substring(5)),[
-    {label:"VytvoÅeno",data:days.map(day=>hd.filter(x=>x.createdDate&&x.createdDate.split("T")[0]===day).length),borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3},
-    {label:"UzavÅeno",data:days.map(day=>hd.filter(x=>(x.closedDate||x.resolvedDate)&&(x.closedDate||x.resolvedDate).split("T")[0]===day).length),borderColor:"#10b981",backgroundColor:"rgba(16,185,129,.15)",fill:true,tension:.3}
+    {label:"Vytvořeno",data:days.map(day=>hd.filter(x=>x.createdDate&&x.createdDate.split("T")[0]===day).length),borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3},
+    {label:"Uzavřeno",data:days.map(day=>hd.filter(x=>(x.closedDate||x.resolvedDate)&&(x.closedDate||x.resolvedDate).split("T")[0]===day).length),borderColor:"#10b981",backgroundColor:"rgba(16,185,129,.15)",fill:true,tension:.3}
   ]);
 }
 
@@ -405,28 +392,25 @@ function renderTables(){
   document.getElementById("helpdeskBody").innerHTML=hd.length?hd.map(x=>{
     const days=daysBetween(x.createdDate,x.resolvedDate||x.closedDate);
     return `<tr><td>${link(x.devopsId||x.id)}</td><td title="${x.title||""}">${x.title||"--"}</td><td>${badgeState(x.status||x.state)}</td><td>${x.owner||x.assignee||"--"}</td><td>${requester(x)}</td><td>${x.priority?`P${x.priority}`:"--"}</td><td>${agenda(x)}</td><td>${fmtDate(x.createdDate)}</td><td>${fmtDate(x.resolvedDate||x.closedDate)}</td><td>${days!==null?days+" d":"--"}</td><td class="small">${sprintName(x.iterationPath)}</td></tr>`;
-  }).join(""):`<tr><td colspan="11" class="small">Å½Ã¡dnÃ© Helpdesk tickety ve vybranÃ©m sprintu.</td></tr>`;
+  }).join(""):`<tr><td colspan="11" class="small">Žádné Helpdesk tickety ve vybraném sprintu.</td></tr>`;
 
   document.getElementById("planningBody").innerHTML=pl.length?pl.map(x=>`
     <tr><td>${link(x.id)}</td><td>${x.type||"--"}</td><td title="${x.title||""}">${x.title||"--"}</td><td>${badgeState(x.state)}</td><td>${x.assignee||"--"}</td><td>${x.estimatedHours!==null&&x.estimatedHours!==undefined?fmt(x.estimatedHours,1)+"h":"--"}</td><td>${fmt(x.completedHours,1)}h</td><td>${fmt(x.remainingHours,1)}h</td><td>${fmtDate(x.closedDate)}</td><td class="small">${sprintName(x.iterationPath)}</td></tr>
-  `).join(""):`<tr><td colspan="10" class="small">Å½Ã¡dnÃ© plÃ¡novacÃ­ tickety ve vybranÃ©m sprintu.</td></tr>`;
+  `).join(""):`<tr><td colspan="10" class="small">Žádné plánovací tickety ve vybraném sprintu.</td></tr>`;
 
   document.getElementById("ticketsBody").innerHTML=wi.length?wi.map(x=>`
     <tr><td>${link(x.id)}</td><td>${badgeCategory(x.isHelpdesk)}</td><td>${x.type||"--"}</td><td title="${x.title||""}">${x.title||"--"}</td><td>${badgeState(x.state)}</td><td>${x.assignee||"--"}</td><td>${agenda(x)}</td><td class="small">${x.areaPath||"--"}</td><td>${fmtDate(x.createdDate)}</td><td>${fmtDate(x.closedDate)}</td></tr>
-  `).join(""):`<tr><td colspan="10" class="small">Å½Ã¡dnÃ© tickety ve vybranÃ©m sprintu.</td></tr>`;
+  `).join(""):`<tr><td colspan="10" class="small">Žádné tickety ve vybraném sprintu.</td></tr>`;
 }
-
 
 function renderCarryOverTable(){
   if(!DATA)return;
-  const wi=DATA.workItems||[];
-  const coItems=wi.filter(x=>isCarryOver(x));
+  const items=(DATA.workItems||[]).filter(x=>isCarryOver(x));
   const tbody=document.getElementById("carryOverBody");
   if(!tbody)return;
-  tbody.innerHTML=coItems.length?coItems.map(x=>
-    `<tr><td>${link(x.id)}</td><td title="${x.title||""}">${x.title||"--"}</td><td>${badgeState(x.state)}</td><td>${x.assignee||"--"}</td></tr>`
-  ).join(""):'<tr><td colspan="4" class="small">Žádné přesunuté tickety.</td></tr>';
+  tbody.innerHTML=items.length?items.map(x=>`<tr><td>${link(x.id)}</td><td>${x.title||"--"}</td><td>${badgeState(x.state)}</td><td>${x.assignee||"--"}</td></tr>`).join(""):`<tr><td colspan="4">Prázdno</td></tr>`;
 }
+
 function renderAreaDetails(){
   if(!DATA)return;
   const wi=DATA.workItems||[];
@@ -444,7 +428,7 @@ function renderAreaDetails(){
   const rows=[...map.values()].sort((a,b)=>b.total-a.total);
   document.getElementById("areasBody").innerHTML=rows.length?rows.map(r=>`
     <tr><td>${r.name}</td><td><strong>${r.total}</strong></td><td>${r.hd}</td><td>${r.pl}</td><td class="green">${r.closed}</td><td class="yellow">${r.active}</td><td>${fmt(r.estimate,1)}h</td><td>${fmt(r.completed,1)}h</td></tr>
-  `).join(""):`<tr><td colspan="8" class="small">Å½Ã¡dnÃ© oblasti k zobrazenÃ­.</td></tr>`;
+  `).join(""):`<tr><td colspan="8" class="small">Žádné oblasti k zobrazení.</td></tr>`;
 }
 
 (async function init(){
