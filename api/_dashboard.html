@@ -287,9 +287,7 @@ let DATA = null;
 let CHARTS = {};
 
 function isCarryOver(x) {
-  if (!DATA) return false;
-  if (DATA.carryOverIds) return DATA.carryOverIds.has(Number(x.id));
-  return false;
+  return String(x.tags || '').toLowerCase().includes('carry-over');
 }
 
 function setLoading(on) {
@@ -938,18 +936,6 @@ async function loadData() {
   try {
     const sprintId = document.getElementById("sprintSelect").value;
     DATA = await DataSource.getSprintData(sprintId);
-    try {
-      const _allSp = await DataSource.getSprints();
-      const _cur = _allSp.find(s => sprintId ? (s.id === sprintId || s.fullPath === sprintId) : s.isCurrent);
-      const _curStart = _cur && _cur.startDate ? new Date(_cur.startDate).getTime() : null;
-      const _ps = _curStart ? _allSp.filter(s => s.endDate && new Date(s.endDate).getTime() < _curStart).sort((a,b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0] : null;
-      if (_ps) {
-        const _pd = await DataSource.getSprintData(_ps.id);
-        DATA.carryOverIds = new Set((_pd.workItems || []).map(x => Number(x.id)));
-      } else {
-        DATA.carryOverIds = new Set();
-      }
-    } catch (_e) { DATA.carryOverIds = new Set(); }
     render();
     document.getElementById("lastUpdated").textContent = "Obnoveno: "+new Date().toLocaleTimeString("cs-CZ");
   } catch(e) {
