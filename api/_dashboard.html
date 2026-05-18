@@ -288,7 +288,7 @@ let CHARTS = {};
 
 function isCarryOver(x) {
   if (!DATA || !DATA.sprint) return false;
-  const currentSprint = (DATA.sprint.name || '').trim(); const ticketSprint = (x.iterationPath || '').split(/[\\\/.]+/).pop().trim();
+  const currentSprint = (DATA.sprint.name || '').trim(); const ticketSprint = (x.iterationPath || '').split(/[\\]+/).pop().trim();
   return ticketSprint.length > 0 && ticketSprint !== currentSprint;
 }
 
