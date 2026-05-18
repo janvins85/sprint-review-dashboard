@@ -23,7 +23,7 @@ button{background:var(--blue);border:none;color:white;padding:9px 15px;border-ra
 .kpi .v{font-size:2rem;font-weight:800;line-height:1}.kpi .l{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-top:6px}.kpi .s{font-size:.75rem;color:var(--text2);margin-top:3px}
 .blue{color:var(--blue)}.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--red)}.purple{color:var(--purple)}.orange{color:var(--orange)}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:20px}
-.card-title{font-size:.85rem;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.card-title{font-size:.85rem;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottomhh:14px}
 .summary{background:linear-gradient(135deg,rgba(30,58,138,.35),rgba(30,64,175,.18));border:1px solid rgba(59,130,246,.35);border-radius:13px;padding:20px;margin-bottom:22px;line-height:1.7}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
 @media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr}}
@@ -91,7 +91,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <div class="kpi"><div id="kpiClosed" class="v green">--</div><div class="l">Uzav&#345;eno</div><div class="s" id="kpiClosedSub">--</div></div>
   <div class="kpi"><div id="kpiActive" class="v yellow">--</div><div class="l">Prob&#237;h&#225;</div><div class="s">Active</div></div>
   <div class="kpi"><div id="kpiOpen" class="v red">--</div><div class="l">Otev&#345;eno</div><div class="s">New / To Do</div></div>
-  <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z p&#345;edch. sprintu</div><div class="s">P&#345;esun ze sprint 01</div></div>
+  <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z p&#345;edch. sprintu</div><div class="s">P&#345;esun z předchozího sprintu</div></div>
   <div class="kpi"><div id="kpiEstimate" class="v purple">--</div><div class="l">Odhad</div><div class="s">hodiny</div></div>
   <div class="kpi"><div id="kpiCompleted" class="v blue">--</div><div class="l">Odpracov&#225;no</div><div class="s">hodiny</div></div>
   <div class="kpi"><div id="kpiHdCoverage" class="v" style="color:var(--teal)">--</div><div class="l">HD pole</div><div class="s">% pokryt&#237; kategoriemi</div></div>
@@ -115,7 +115,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 <!-- TAB: P&#345;ehled -->
 <section id="tab-overview" class="tab-content active">
   <div id="carryOverSummary" class="card" style="margin-bottom:20px;border-left:3px solid var(--orange)">
-    <div class="card-title" style="color:var(--orange)">&#x1F504; P&#345;esun ze sprintu 01</div><p>Na&#269;&#237;t&#225;m...</p>
+    <div class="card-title" style="color:var(--orange)">&#x1F504; P&#345;esun z předchozího sprintu</div><p>Na&#269;&#237;t&#225;m...</p>
   </div>
   <div class="grid-3">
     <div class="card">
@@ -133,11 +133,11 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   </div>
   <div class="grid-2" style="margin-top:20px">
     <div class="card">
-      <div class="card-title">Nov&#233; vs. p&#345;esun ze sprintu 01</div>
+      <div class="card-title">Nov&#233; vs. p&#345;esun z předchozího sprintu</div>
       <div class="chart-donut-wrap"><canvas id="chartCarryOver" class="chart-donut-canvas"></canvas><div id="legendCarryOver" class="chart-legend"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">P&#345;esunut&#233; tickety ze sprintu 01</div>
+      <div class="card-title">P&#345;esunut&#233; tickety ze Přesun z předchozího sprintu</div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>N&#225;zev</th><th>Stav</th><th>Vlastn&#237;k</th></tr></thead><tbody id="carryOverBody"></tbody></table></div>
     </div>
   </div>
@@ -182,7 +182,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <!-- NEW: Carry-over closure chart -->
   <div class="grid-2" style="margin-top:20px">
     <div class="card">
-      <div class="card-title">&#x1F504; Uzav&#345;en&#237; ticket&#367; p&#345;esunut&#253;ch ze sprintu 01</div>
+      <div class="card-title">&#x1F504; Uzav&#345;en&#237; ticket&#367; p&#345;esunut&#253;ch ze Přesun z předchozího sprintu</div>
       <div class="chart-donut-wrap"><canvas id="chartCarryOverClosure" class="chart-donut-canvas"></canvas><div id="legendCarryOverClosure" class="chart-legend"></div></div>
     </div>
     <div class="card">
@@ -834,8 +834,8 @@ function render() {
   const coEl = document.getElementById("carryOverSummary");
   if (coEl) {
     const coC = wi.filter(x=>isCarryOver(x)&&["Closed","Resolved"].includes(x.state)).length;
-    coEl.innerHTML = '<div class="card-title" style="color:var(--orange)">&#x1F504; Přesun ze sprintu 01</div>' +
-      '<p>Ze <strong>sprintu 01 (20.4.–3.5.2026)</strong> bylo přesunuto <strong>' + carryOverCount + ' aktivních ticketů</strong>. ' +
+    coEl.innerHTML = '<div class="card-title" style="color:var(--orange)">&#x1F504; Přesun z předchozího sprintu</div>' +
+      '<p>Z <strong>předchozího sprintu</strong> bylo přesunuto <strong>' + carryOverCount + ' aktivních ticketů</strong>. ' +
       'Uzavřeno: <strong>' + coC + '</strong>, probíhá: <strong>' + (carryOverCount-coC) + '</strong>. Nové: <strong>' + (wi.length-carryOverCount) + '</strong>.</p>';
   }
   const covEl = document.getElementById("hdCoverageBar");
@@ -878,7 +878,7 @@ function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, compl
     "aktivních je <strong>" + active + "</strong>, otevřených <strong>" + open + "</strong>. " +
     "Odhad: <strong>" + fmt(estimate,1) + " h</strong>, odpracováno: <strong>" + fmt(completed,1) + " h</strong>.";
   if (topP) html += "<br><br><strong>&#x1F464; Nejvytíženější:</strong> " + topP[0] + " má " + topP[1] + " ticketů.";
-  if (carryOverCount > 0) html += " Přesunuto ze sprintu 01: <strong>" + carryOverCount + "</strong>, uzavřeno: <strong>" + coC + "</strong> (" + (carryOverCount ? Math.round(coC/carryOverCount*100) : 0) + " %).";
+  if (carryOverCount > 0) html += " Přesunuto z předchozího sprintu: <strong>" + carryOverCount + "</strong>, uzavřeno: <strong>" + coC + "</strong> (" + (carryOverCount ? Math.round(coC/carryOverCount*100) : 0) + " %).";
   if (topCat) html += "<br><br><strong>&#x1F4C2; HD kategorie:</strong> Nejcennější je <strong>" + topCat[0] + "</strong> (" + topCat[1] + " ticketů). Pokrytí HD polí: <strong>" + hdCoverage + " %</strong>.";
   if (bugs>0||newReq>0||queries>0) {
     const parts=[];
@@ -956,3 +956,4 @@ async function loadData() {
 </script>
 </body>
 </html>
+h
