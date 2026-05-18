@@ -91,7 +91,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <div class="kpi"><div id="kpiClosed" class="v green">--</div><div class="l">Uzav&#345;eno</div><div class="s" id="kpiClosedSub">--</div></div>
   <div class="kpi"><div id="kpiActive" class="v yellow">--</div><div class="l">Prob&#237;h&#225;</div><div class="s">Active</div></div>
   <div class="kpi"><div id="kpiOpen" class="v red">--</div><div class="l">Otev&#345;eno</div><div class="s">New / To Do</div></div>
-  <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z p&#345;edch. sprintu</div><div class="s">P&#345;esun z pÃÂedchozÃÂ­ho sprintu</div></div>
+  <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z p&#345;edch. sprintu</div><div class="s">P&#345;esun z předchozího sprintu</div></div>
   <div class="kpi"><div id="kpiEstimate" class="v purple">--</div><div class="l">Odhad</div><div class="s">hodiny</div></div>
   <div class="kpi"><div id="kpiCompleted" class="v blue">--</div><div class="l">Odpracov&#225;no</div><div class="s">hodiny</div></div>
   <div class="kpi"><div id="kpiHdCoverage" class="v" style="color:var(--teal)">--</div><div class="l">HD pole</div><div class="s">% pokryt&#237; kategoriemi</div></div>
@@ -115,7 +115,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
 <!-- TAB: P&#345;ehled -->
 <section id="tab-overview" class="tab-content active">
   <div id="carryOverSummary" class="card" style="margin-bottom:20px;border-left:3px solid var(--orange)">
-    <div class="card-title" style="color:var(--orange)">&#x1F504; P&#345;esun z pÃÂedchozÃÂ­ho sprintu</div><p>Na&#269;&#237;t&#225;m...</p>
+    <div class="card-title" style="color:var(--orange)">&#x1F504; P&#345;esun z předchozího sprintu</div><p>Na&#269;&#237;t&#225;m...</p>
   </div>
   <div class="grid-3">
     <div class="card">
@@ -133,11 +133,11 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   </div>
   <div class="grid-2" style="margin-top:20px">
     <div class="card">
-      <div class="card-title">Nov&#233; vs. p&#345;esun z pÃÂedchozÃÂ­ho sprintu</div>
+      <div class="card-title">Nov&#233; vs. p&#345;esun z předchozího sprintu</div>
       <div class="chart-donut-wrap"><canvas id="chartCarryOver" class="chart-donut-canvas"></canvas><div id="legendCarryOver" class="chart-legend"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">P&#345;esunut&#233; tickety z pÃÂedchozÃÂ­ho sprintu</div>
+      <div class="card-title">P&#345;esunut&#233; tickety z předchozího sprintu</div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>N&#225;zev</th><th>Stav</th><th>Vlastn&#237;k</th></tr></thead><tbody id="carryOverBody"></tbody></table></div>
     </div>
   </div>
@@ -182,7 +182,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <!-- NEW: Carry-over closure chart -->
   <div class="grid-2" style="margin-top:20px">
     <div class="card">
-      <div class="card-title">&#x1F504; Uzav&#345;en&#237; ticket&#367; p&#345;esunut&#253;ch z pÃÂedchozÃÂ­ho sprintu</div>
+      <div class="card-title">&#x1F504; Uzav&#345;en&#237; ticket&#367; p&#345;esunut&#253;ch z předchozího sprintu</div>
       <div class="chart-donut-wrap"><canvas id="chartCarryOverClosure" class="chart-donut-canvas"></canvas><div id="legendCarryOverClosure" class="chart-legend"></div></div>
     </div>
     <div class="card">
@@ -243,7 +243,7 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <div id="catCards"></div>
   <!-- Summary table -->
   <div class="card">
-    <div class="card-title">&#x1F4CA; SouhrnnÃÂ¡ tabulka dle HD kategorie</div>
+    <div class="card-title">&#x1F4CA; Souhrnná tabulka dle HD kategorie</div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -404,14 +404,14 @@ function groupCount(items, fn) {
 
 const PALETTE = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#f97316","#06b6d4","#84cc16","#ec4899","#14b8a6","#a78bfa","#fb923c"];
 const PALETTE_CATEGORY = {
-  "Int.aplik.Ã¢ÂÂRedakce":"#3b82f6","Int.aplik.Ã¢ÂÂHR":"#10b981","OstatnÃÂ­":"#f59e0b",
-  "Int.aplik.Ã¢ÂÂKV":"#ef4444","Int.aplik.Ã¢ÂÂOstatnÃÂ­":"#8b5cf6","Chyba v datech":"#06b6d4",
-  "Software":"#f97316","PÃÂÃÂ­stupy":"#ec4899","Navision":"#14b8a6","Hardware":"#84cc16",
-  "NovÃÂ¡ internÃÂ­ aplikace - KalkulanÃÂnÃÂ­ varianta":"#a78bfa"
+  "Int.aplik.–Redakce":"#3b82f6","Int.aplik.–HR":"#10b981","Ostatní":"#f59e0b",
+  "Int.aplik.–KV":"#ef4444","Int.aplik.–Ostatní":"#8b5cf6","Chyba v datech":"#06b6d4",
+  "Software":"#f97316","Přístupy":"#ec4899","Navision":"#14b8a6","Hardware":"#84cc16",
+  "Nová interní aplikace - Kalkulanční varianta":"#a78bfa"
 };
-const PALETTE_URGENCY = {"KritickÃÂ¡":"#ef4444","VysokÃÂ¡":"#f97316","NormÃÂ¡lnÃÂ­":"#3b82f6","NÃÂ­zkÃÂ¡":"#6b7280"};
-const PALETTE_TYPE = {"Chyba/Issue":"#ef4444","NovÃÂ½ poÃÂ¾adavek":"#3b82f6","Dotaz":"#14b8a6","Inquiry":"#14b8a6","OstatnÃÂ­":"#6b7280"};
-const PALETTE_STATUS = {"PÃÂiÃÂazeno":"#6b7280","ProbÃÂ­hÃÂ¡":"#f59e0b","VyÃÂeÃÂ¡eno":"#10b981","UzavÃÂeno":"#059669","ZruÃÂ¡eno":"#ef4444"};
+const PALETTE_URGENCY = {"Kritická":"#ef4444","Vysoká":"#f97316","Normální":"#3b82f6","Nízká":"#6b7280"};
+const PALETTE_TYPE = {"Chyba/Issue":"#ef4444","Nový požadavek":"#3b82f6","Dotaz":"#14b8a6","Inquiry":"#14b8a6","Ostatní":"#6b7280"};
+const PALETTE_STATUS = {"Přiřazeno":"#6b7280","Probíhá":"#f59e0b","Vyřešeno":"#10b981","Uzavřeno":"#059669","Zrušeno":"#ef4444"};
 
 function colorFor(label, paletteMap, fallbackPalette, idx) {
   return paletteMap[label] || fallbackPalette[idx % fallbackPalette.length];
@@ -505,14 +505,14 @@ function renderCharts(wi, hd, pl, people) {
   const states = ["New", "Active", "Resolved", "Closed"];
   donutChart("chartStates","legendStates", states, states.map(s => wi.filter(x => x.state === s).length),
     {"New":"#6b7280","Active":"#f59e0b","Resolved":"#10b981","Closed":"#059669"});
-  donutChart("chartSplit","legendSplit", ["Helpdesk","PlÃÂ¡n"], [hd.length, pl.length],
-    {"Helpdesk":"#3b82f6","PlÃÂ¡n":"#f97316"});
+  donutChart("chartSplit","legendSplit", ["Helpdesk","Plán"], [hd.length, pl.length],
+    {"Helpdesk":"#3b82f6","Plán":"#f97316"});
   const p = Object.entries(people).sort((a,b) => b[1]-a[1]).slice(0,8);
   barChart("chartPeople", p.map(x=>x[0]), p.map(x=>x[1]), p.map((_,i)=>PALETTE[i%PALETTE.length]));
   const coC = wi.filter(x => isCarryOver(x)).length;
   donutChart("chartCarryOver","legendCarryOver",
-    ["PÃÂesunutÃÂ© z pÃÂedch. sprintu","NovÃÂ© v tomto sprintu"], [coC, wi.length - coC],
-    {"PÃÂesun ze spr.01":"#f97316","NovÃÂ© v spr.02":"#3b82f6"});
+    ["Přesun ze spr.01","Nové v spr.02"], [coC, wi.length - coC],
+    {"Přesun ze spr.01":"#f97316","Nové v spr.02":"#3b82f6"});
 
   renderDailyHDChart(hd);
 
@@ -543,14 +543,14 @@ function renderCharts(wi, hd, pl, people) {
 function renderDailyHDChart(hd) {
   const dates = hd.map(x=>x.createdDate).filter(Boolean).map(x=>new Date(x)).filter(x=>!isNaN(x));
   if (!dates.length) {
-    lineChart("chartDailyHD",[],[{label:"VytvoÃÂeno",data:[],borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3}]);
+    lineChart("chartDailyHD",[],[{label:"Vytvořeno",data:[],borderColor:"#3b82f6",backgroundColor:"rgba(59,130,246,.15)",fill:true,tension:.3}]);
     return;
   }
   const mn = new Date(Math.min(...dates)), mx = new Date(Math.max(...dates)), days = [];
   for (let d = new Date(mn); d <= mx; d.setDate(d.getDate()+1)) days.push(d.toISOString().split("T")[0]);
   lineChart("chartDailyHD", days.map(x=>x.substring(5)), [
-    {label:"VytvoÃÂeno", data:days.map(day=>hd.filter(x=>x.createdDate&&x.createdDate.split("T")[0]===day).length), borderColor:"#3b82f6", backgroundColor:"rgba(59,130,246,.15)", fill:true, tension:.3},
-    {label:"UzavÃÂeno", data:days.map(day=>hd.filter(x=>(x.closedDate||x.resolvedDate)&&(x.closedDate||x.resolvedDate).split("T")[0]===day).length), borderColor:"#10b981", backgroundColor:"rgba(16,185,129,.15)", fill:true, tension:.3}
+    {label:"Vytvořeno", data:days.map(day=>hd.filter(x=>x.createdDate&&x.createdDate.split("T")[0]===day).length), borderColor:"#3b82f6", backgroundColor:"rgba(59,130,246,.15)", fill:true, tension:.3},
+    {label:"Uzavřeno", data:days.map(day=>hd.filter(x=>(x.closedDate||x.resolvedDate)&&(x.closedDate||x.resolvedDate).split("T")[0]===day).length), borderColor:"#10b981", backgroundColor:"rgba(16,185,129,.15)", fill:true, tension:.3}
   ]);
 }
 
@@ -567,9 +567,9 @@ function renderOwnerCategoryChart(hd) {
 }
 
 function renderHDvsDevOpsChart(hd) {
-  const hdSt = ["PÃÂiÃÂazeno","ProbÃÂ­hÃÂ¡","VyÃÂeÃÂ¡eno","UzavÃÂeno","ZruÃÂ¡eno"];
+  const hdSt = ["Přiřazeno","Probíhá","Vyřešeno","Uzavřeno","Zrušeno"];
   const dvSt = ["New","Active","Resolved","Closed"];
-  const labels = ["HD: PÃÂiÃÂazeno","HD: ProbÃÂ­hÃÂ¡","HD: VyÃÂeÃÂ¡eno","HD: UzavÃÂeno","HD: ZruÃÂ¡eno","DevOps: New","DevOps: Active","DevOps: Resolved","DevOps: Closed"];
+  const labels = ["HD: Přiřazeno","HD: Probíhá","HD: Vyřešeno","HD: Uzavřeno","HD: Zrušeno","DevOps: New","DevOps: Active","DevOps: Resolved","DevOps: Closed"];
   const data = [...hdSt.map(s=>hd.filter(x=>x.hdStatus===s).length), ...dvSt.map(s=>hd.filter(x=>x.state===s).length)];
   const colors = ["#6b7280","#f59e0b","#10b981","#059669","#ef4444","#6b7280","#f59e0b","#10b981","#059669"];
   barChart("chartHDvsDevOps", labels, data, colors);
@@ -580,13 +580,13 @@ function renderCarryOverClosureChart(wi) {
   const coClosed = co.filter(x => ["Closed","Resolved"].includes(x.state)).length;
   const coActive = co.filter(x => x.state === "Active").length;
   const coOpen = co.filter(x => x.state === "New").length;
-  const labels = ["UzavÃÂeno","ProbÃÂ­hÃÂ¡","OtevÃÂeno"];
+  const labels = ["Uzavřeno","Probíhá","Otevřeno"];
   const data = [coClosed, coActive, coOpen];
   donutChart("chartCarryOverClosure","legendCarryOverClosure", labels, data,
-    {"UzavÃÂeno":"#10b981","ProbÃÂ­hÃÂ¡":"#f59e0b","OtevÃÂeno":"#6b7280"});
+    {"Uzavřeno":"#10b981","Probíhá":"#f59e0b","Otevřeno":"#6b7280"});
 }
 
-// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Category-based (Oblasti tab) functions Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// ─── Category-based (Oblasti tab) functions ──────────────────────────────────
 function buildCategoryMap(hd) {
   const map = new Map();
   hd.forEach(x => {
@@ -621,24 +621,24 @@ function renderCategoryCharts(hd) {
     const totalHD = rows.reduce((s,r) => s+r.total, 0);
     const totalClosed = rows.reduce((s,r) => s+r.closed, 0);
     const closedPct = totalHD ? Math.round(totalClosed/totalHD*100) : 0;
-    const criticalCats = rows.filter(r => (r.urgencies["KritickÃÂ¡"]||0)+(r.urgencies["VysokÃÂ¡"]||0) > 0).length;
+    const criticalCats = rows.filter(r => (r.urgencies["Kritická"]||0)+(r.urgencies["Vysoká"]||0) > 0).length;
     el.innerHTML =
-      '<div class="cat-kpi"><div class="v blue">' + totalCats + '</div><div class="l">KategoriÃÂ­ celkem</div></div>' +
+      '<div class="cat-kpi"><div class="v blue">' + totalCats + '</div><div class="l">Kategorií celkem</div></div>' +
       '<div class="cat-kpi"><div class="v green">' + catsWithData + '</div><div class="l">S HD_CATEGORY</div></div>' +
-      '<div class="cat-kpi"><div class="v" style="color:var(--green)">' + closedPct + ' %</div><div class="l">UzavÃÂeno celkem</div></div>' +
+      '<div class="cat-kpi"><div class="v" style="color:var(--green)">' + closedPct + ' %</div><div class="l">Uzavřeno celkem</div></div>' +
       (criticalCats > 0 ? '<div class="cat-kpi"><div class="v red">' + criticalCats + '</div><div class="l">Kategorie s krit./vys.</div></div>' : '') +
-      '<div class="cat-kpi"><div class="v orange">' + totalHD + '</div><div class="l">HD ticketÃÂ¯</div></div>';
+      '<div class="cat-kpi"><div class="v orange">' + totalHD + '</div><div class="l">HD ticketů</div></div>';
   }
 
   // Donut: by category
   donutChart("chartCatSplit","legendCatSplit", rows.map(r=>r.name), rows.map(r=>r.total), PALETTE_CATEGORY);
 
   // Stacked bar: states per category
-  const catLabels = rows.map(r => r.name.length > 20 ? r.name.substring(0,18)+"Ã¢ÂÂ¦" : r.name);
+  const catLabels = rows.map(r => r.name.length > 20 ? r.name.substring(0,18)+"…" : r.name);
   stackedBarChart("chartCatStates", catLabels, [
-    {label:"UzavÃÂeno", data:rows.map(r=>r.closed), backgroundColor:"#10b981"},
-    {label:"ProbÃÂ­hÃÂ¡",  data:rows.map(r=>r.active), backgroundColor:"#f59e0b"},
-    {label:"OtevÃÂeno",  data:rows.map(r=>r.open),   backgroundColor:"#6b7280"}
+    {label:"Uzavřeno", data:rows.map(r=>r.closed), backgroundColor:"#10b981"},
+    {label:"Probíhá",  data:rows.map(r=>r.active), backgroundColor:"#f59e0b"},
+    {label:"Otevřeno",  data:rows.map(r=>r.open),   backgroundColor:"#6b7280"}
   ]);
 
   // Cards
@@ -649,32 +649,32 @@ function renderCategoryCharts(hd) {
       const color = colorFor(r.name, PALETTE_CATEGORY, PALETTE, idx);
       const topTypes = Object.entries(r.types).sort((a,b)=>b[1]-a[1]).slice(0,4);
       const topUrgencies = Object.entries(r.urgencies).sort((a,b)=>b[1]-a[1]).slice(0,4);
-      const criticalCount = (r.urgencies["KritickÃÂ¡"]||0)+(r.urgencies["VysokÃÂ¡"]||0);
+      const criticalCount = (r.urgencies["Kritická"]||0)+(r.urgencies["Vysoká"]||0);
       const topReq = Object.entries(r.requesters).sort((a,b)=>b[1]-a[1])[0];
       const assignees = [...r.assignees].slice(0,3);
       return '<div class="cat-card">' +
         '<div class="cat-card-header">' +
           '<div>' +
             '<div class="cat-card-name" style="color:' + color + '">' + escapeHtml(r.name) + '</div>' +
-            '<div class="small" style="margin-top:4px">' + r.total + ' ticketÃÂ¯ celkem</div>' +
+            '<div class="small" style="margin-top:4px">' + r.total + ' ticketů celkem</div>' +
           '</div>' +
           '<div class="cat-card-badges">' +
-            '<span class="badge b-green">UzavÃÂeno: ' + r.closed + '</span>' +
-            (r.active > 0 ? '<span class="badge b-yellow">ProbÃÂ­hÃÂ¡: ' + r.active + '</span>' : '') +
-            (r.open > 0 ? '<span class="badge b-gray">OtevÃÂeno: ' + r.open + '</span>' : '') +
+            '<span class="badge b-green">Uzavřeno: ' + r.closed + '</span>' +
+            (r.active > 0 ? '<span class="badge b-yellow">Probíhá: ' + r.active + '</span>' : '') +
+            (r.open > 0 ? '<span class="badge b-gray">Otevřeno: ' + r.open + '</span>' : '') +
             (criticalCount > 0 ? '<span class="badge b-red">&#9888; Krit./Vys.: ' + criticalCount + '</span>' : '') +
           '</div>' +
         '</div>' +
-        '<div class="small" style="margin-bottom:6px">UzavÃÂeno: ' + completePct + ' %</div>' +
+        '<div class="small" style="margin-bottom:6px">Uzavřeno: ' + completePct + ' %</div>' +
         '<div class="cat-progress-bar"><div class="cat-progress-fill" style="width:' + completePct + '%;background:' + color + '"></div></div>' +
         '<div class="cat-detail-grid">' +
-          (topTypes.length > 0 ? '<div class="cat-detail-item"><div class="label">Typy poÃÂ¾adavkÃÂ¯</div><div class="value">' +
+          (topTypes.length > 0 ? '<div class="cat-detail-item"><div class="label">Typy požadavků</div><div class="value">' +
             topTypes.map(([k,v]) => badgeHdType(k) + ' <span class="small">(' + v + ')</span>').join(' ') + '</div></div>' : '') +
-          (topUrgencies.length > 0 ? '<div class="cat-detail-item"><div class="label">NalÃÂ©havost</div><div class="value">' +
+          (topUrgencies.length > 0 ? '<div class="cat-detail-item"><div class="label">Naléhavost</div><div class="value">' +
             topUrgencies.map(([k,v]) => badgeUrgency(k) + ' <span class="small">(' + v + ')</span>').join(' ') + '</div></div>' : '') +
           (topReq ? '<div class="cat-detail-item"><div class="label">Top zadavatel</div><div class="value"><strong>' +
-            escapeHtml(topReq[0]) + '</strong> (' + topReq[1] + ' poÃÂ¾.)</div></div>' : '') +
-          (assignees.length > 0 ? '<div class="cat-detail-item"><div class="label">VlastnÃÂ­ci</div><div class="value">' +
+            escapeHtml(topReq[0]) + '</strong> (' + topReq[1] + ' pož.)</div></div>' : '') +
+          (assignees.length > 0 ? '<div class="cat-detail-item"><div class="label">Vlastníci</div><div class="value">' +
             assignees.map(a => escapeHtml(a)).join(', ') + '</div></div>' : '') +
         '</div>' +
       '</div>';
@@ -686,7 +686,7 @@ function renderCategoryCharts(hd) {
   if (tbody) {
     tbody.innerHTML = rows.length ? rows.map(r => {
       const completePct = r.total ? Math.round(r.closed/r.total*100) : 0;
-      const criticalCount = (r.urgencies["KritickÃÂ¡"]||0)+(r.urgencies["VysokÃÂ¡"]||0);
+      const criticalCount = (r.urgencies["Kritická"]||0)+(r.urgencies["Vysoká"]||0);
       const topReq = Object.entries(r.requesters).sort((a,b)=>b[1]-a[1])[0];
       const typesSummary = Object.entries(r.types).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>escapeHtml(k)+' ('+v+')').join(', ');
       const owners = [...r.assignees].join(', ');
@@ -697,10 +697,10 @@ function renderCategoryCharts(hd) {
         '<td>' + completePct + ' %</td>' +
         '<td class="yellow">' + r.active + '</td>' +
         '<td class="red">' + r.open + '</td>' +
-        '<td class="small">' + (typesSummary||'Ã¢ÂÂ') + '</td>' +
+        '<td class="small">' + (typesSummary||'–') + '</td>' +
         '<td>' + (criticalCount > 0 ? '<span class="badge b-red">'+criticalCount+'</span>' : '<span class="small" style="color:var(--text2)">0</span>') + '</td>' +
-        '<td class="small">' + (topReq ? escapeHtml(topReq[0])+' ('+topReq[1]+')' : 'Ã¢ÂÂ') + '</td>' +
-        '<td class="small">' + escapeHtml(owners||'Ã¢ÂÂ') + '</td>' +
+        '<td class="small">' + (topReq ? escapeHtml(topReq[0])+' ('+topReq[1]+')' : '–') + '</td>' +
+        '<td class="small">' + escapeHtml(owners||'–') + '</td>' +
       '</tr>';
     }).join('') : '<tr><td colspan="10" class="small">&#381;&#225;dn&#233; kategorie k zobrazen&#237;.</td></tr>';
   }
@@ -733,10 +733,10 @@ function renderTables() {
       '<td>' + fmtDate(x.resolvedDate||x.closedDate) + '</td>' +
       '<td>' + (days !== null ? days + " d" : "--") + '</td>' +
       '<td class="small">' + escapeHtml(sprintName(x.iterationPath)) + '</td>' +
-      '<td>' + (x.hdCategory ? '<span class="badge b-blue">'+escapeHtml(x.hdCategory)+'</span>' : '<span class="small" style="color:var(--text2)">Ã¢ÂÂ</span>') + '</td>' +
+      '<td>' + (x.hdCategory ? '<span class="badge b-blue">'+escapeHtml(x.hdCategory)+'</span>' : '<span class="small" style="color:var(--text2)">–</span>') + '</td>' +
       '<td>' + badgeHdType(x.hdType) + '</td>' +
       '<td>' + badgeUrgency(x.hdUrgency) + '</td>' +
-      '<td class="small">' + (x.hdRequester ? escapeHtml(x.hdRequester) : '<span style="color:var(--text2)">Ã¢ÂÂ</span>') + '</td></tr>';
+      '<td class="small">' + (x.hdRequester ? escapeHtml(x.hdRequester) : '<span style="color:var(--text2)">–</span>') + '</td></tr>';
   }).join("") : '<tr><td colspan="15" class="small">&#381;&#225;dn&#233; Helpdesk tickety ve vybran&#233;m sprintu.</td></tr>';
 
   document.getElementById("planningBody").innerHTML = pl.length ? pl.map(x =>
@@ -803,7 +803,7 @@ function renderHDCategoryDetail(hd) {
 function render() {
   const d = DATA||{}, wi=d.workItems||[], hd=d.helpdesk||[], pl=d.planningItems||[], sprint=d.sprint||{name:"--"};
   document.getElementById("sprintName").textContent = sprint.name||"--";
-  document.getElementById("generatedAt").textContent = "GenerovÃÂ¡no: " + new Date().toLocaleString("cs-CZ");
+  document.getElementById("generatedAt").textContent = "Generováno: " + new Date().toLocaleString("cs-CZ");
 
   const closed = wi.filter(x=>["Closed","Resolved"].includes(x.state)).length;
   const active = wi.filter(x=>x.state==="Active").length;
@@ -821,7 +821,7 @@ function render() {
   document.getElementById("kpiHD").textContent = fmt(hd.length);
   document.getElementById("kpiPlanning").textContent = fmt(pl.length);
   document.getElementById("kpiClosed").textContent = fmt(closed);
-  document.getElementById("kpiClosedSub").textContent = wi.length ? Math.round(closed/wi.length*100)+" % dokonÃÂeno" : "--";
+  document.getElementById("kpiClosedSub").textContent = wi.length ? Math.round(closed/wi.length*100)+" % dokončeno" : "--";
   document.getElementById("kpiActive").textContent = fmt(active);
   document.getElementById("kpiOpen").textContent = fmt(open);
   document.getElementById("kpiCarryOver").textContent = fmt(carryOverCount);
@@ -834,19 +834,19 @@ function render() {
   const coEl = document.getElementById("carryOverSummary");
   if (coEl) {
     const coC = wi.filter(x=>isCarryOver(x)&&["Closed","Resolved"].includes(x.state)).length;
-    coEl.innerHTML = '<div class="card-title" style="color:var(--orange)">&#x1F504; PÃÂesun z pÃÂedchozÃÂ­ho sprintu</div>' +
-      '<p>Z <strong>pÃÂedchozÃÂ­ho sprintu</strong> bylo pÃÂesunuto <strong>' + carryOverCount + ' aktivnÃÂ­ch ticketÃÂ¯</strong>. ' +
-      'UzavÃÂeno: <strong>' + coC + '</strong>, probÃÂ­hÃÂ¡: <strong>' + (carryOverCount-coC) + '</strong>. NovÃÂ©: <strong>' + (wi.length-carryOverCount) + '</strong>.</p>';
+    coEl.innerHTML = '<div class="card-title" style="color:var(--orange)">&#x1F504; Přesun z předchozího sprintu</div>' +
+      '<p>Z <strong>předchozího sprintu</strong> bylo přesunuto <strong>' + carryOverCount + ' aktivních ticketů</strong>. ' +
+      'Uzavřeno: <strong>' + coC + '</strong>, probíhá: <strong>' + (carryOverCount-coC) + '</strong>. Nové: <strong>' + (wi.length-carryOverCount) + '</strong>.</p>';
   }
   const covEl = document.getElementById("hdCoverageBar");
   if (covEl) {
-    covEl.innerHTML = '&#x1F4CB; HD pole jsou vyplnÃÂna u <strong>' + hdWithCategory + ' z ' + hd.length + ' HD ticketÃÂ¯ (' + hdCoverage + ' %)</strong>.' +
-      (hdCoverage < 70 ? ' <span style="color:var(--yellow)">Ã¢ÂÂ  MÃÂ©nÃÂ neÃÂ¾ 70 % pokrytÃÂ­.</span>' : ' <span style="color:var(--green)">Ã¢ÂÂ DobrÃÂ© pokrytÃÂ­.</span>');
+    covEl.innerHTML = '&#x1F4CB; HD pole jsou vyplněna u <strong>' + hdWithCategory + ' z ' + hd.length + ' HD ticketů (' + hdCoverage + ' %)</strong>.' +
+      (hdCoverage < 70 ? ' <span style="color:var(--yellow)">⚠ Méně než 70 % pokrytí.</span>' : ' <span style="color:var(--green)">✓ Dobré pokrytí.</span>');
   }
 
   renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, completed, carryOverCount, hdCoverage, critical, avgClose);
   const people = {};
-  wi.forEach(x => people[x.assignee||"NepÃÂiÃÂazeno"] = (people[x.assignee||"NepÃÂiÃÂazeno"]||0)+1);
+  wi.forEach(x => people[x.assignee||"Nepřiřazeno"] = (people[x.assignee||"Nepřiřazeno"]||0)+1);
   renderCharts(wi, hd, pl, people);
   renderTables();
   renderCarryOverTable();
@@ -858,7 +858,7 @@ function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, compl
   const plPct = wi.length ? Math.round(pl.length/wi.length*100) : 0;
   const closedPct = wi.length ? Math.round(closed/wi.length*100) : 0;
   const people = {};
-  wi.forEach(x => people[x.assignee||"NepÃÂiÃÂazeno"] = (people[x.assignee||"NepÃÂiÃÂazeno"]||0)+1);
+  wi.forEach(x => people[x.assignee||"Nepřiřazeno"] = (people[x.assignee||"Nepřiřazeno"]||0)+1);
   const topP = Object.entries(people).sort((a,b)=>b[1]-a[1])[0];
   const catCounts = {};
   hd.filter(x=>x.hdCategory).forEach(x=>catCounts[x.hdCategory]=(catCounts[x.hdCategory]||0)+1);
@@ -872,31 +872,31 @@ function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, compl
   const coC = wi.filter(x=>isCarryOver(x)&&["Closed","Resolved"].includes(x.state)).length;
   const el = document.getElementById("summaryText");
   if (!el) return;
-  let html = "<br>Ve sprintu <strong>" + (sprint.name||"--") + "</strong> je naÃÂteno <strong>" + wi.length + "</strong> DevOps ticketÃÂ¯. " +
-    "Z toho <strong>" + hd.length + " (" + hdPct + " %)</strong> spada do Helpdesku a <strong>" + pl.length + " (" + plPct + " %)</strong> tvoÃÂÃÂ­ plÃÂ¡novanÃÂ¡ prÃÂ¡ce.<br><br>";
-  html += "<strong>&#x1F4CC; Stavy:</strong> UzavÃÂeno je <strong>" + closed + " (" + closedPct + " %)</strong> poloÃÂ¾ek, " +
-    "aktivnÃÂ­ch je <strong>" + active + "</strong>, otevÃÂenÃÂ½ch <strong>" + open + "</strong>. " +
-    "Odhad: <strong>" + fmt(estimate,1) + " h</strong>, odpracovÃÂ¡no: <strong>" + fmt(completed,1) + " h</strong>.";
-  if (topP) html += "<br><br><strong>&#x1F464; NejvytÃÂ­ÃÂ¾enÃÂjÃÂ¡ÃÂ­:</strong> " + topP[0] + " mÃÂ¡ " + topP[1] + " ticketÃÂ¯.";
-  if (carryOverCount > 0) html += " PÃÂesunuto z pÃÂedchozÃÂ­ho sprintu: <strong>" + carryOverCount + "</strong>, uzavÃÂeno: <strong>" + coC + "</strong> (" + (carryOverCount ? Math.round(coC/carryOverCount*100) : 0) + " %).";
-  if (topCat) html += "<br><br><strong>&#x1F4C2; HD kategorie:</strong> NejcennÃÂjÃÂ¡ÃÂ­ je <strong>" + topCat[0] + "</strong> (" + topCat[1] + " ticketÃÂ¯). PokrytÃÂ­ HD polÃÂ­: <strong>" + hdCoverage + " %</strong>.";
+  let html = "<br>Ve sprintu <strong>" + (sprint.name||"--") + "</strong> je načteno <strong>" + wi.length + "</strong> DevOps ticketů. " +
+    "Z toho <strong>" + hd.length + " (" + hdPct + " %)</strong> spada do Helpdesku a <strong>" + pl.length + " (" + plPct + " %)</strong> tvoří plánovaná práce.<br><br>";
+  html += "<strong>&#x1F4CC; Stavy:</strong> Uzavřeno je <strong>" + closed + " (" + closedPct + " %)</strong> položek, " +
+    "aktivních je <strong>" + active + "</strong>, otevřených <strong>" + open + "</strong>. " +
+    "Odhad: <strong>" + fmt(estimate,1) + " h</strong>, odpracováno: <strong>" + fmt(completed,1) + " h</strong>.";
+  if (topP) html += "<br><br><strong>&#x1F464; Nejvytíženější:</strong> " + topP[0] + " má " + topP[1] + " ticketů.";
+  if (carryOverCount > 0) html += " Přesunuto z předchozího sprintu: <strong>" + carryOverCount + "</strong>, uzavřeno: <strong>" + coC + "</strong> (" + (carryOverCount ? Math.round(coC/carryOverCount*100) : 0) + " %).";
+  if (topCat) html += "<br><br><strong>&#x1F4C2; HD kategorie:</strong> Nejcennější je <strong>" + topCat[0] + "</strong> (" + topCat[1] + " ticketů). Pokrytí HD polí: <strong>" + hdCoverage + " %</strong>.";
   if (bugs>0||newReq>0||queries>0) {
     const parts=[];
     if (bugs>0) parts.push("<strong>"+bugs+" chyb</strong>");
-    if (newReq>0) parts.push("<strong>"+newReq+" novÃÂ½ch poÃÂ¾adavkÃÂ¯</strong>");
-    if (queries>0) parts.push("<strong>"+queries+" dotazÃÂ¯</strong>");
+    if (newReq>0) parts.push("<strong>"+newReq+" nových požadavků</strong>");
+    if (queries>0) parts.push("<strong>"+queries+" dotazů</strong>");
     html += "<br><strong>&#x1F527; Typy HD:</strong> "+parts.join(", ")+".";
   }
-  if (critical>0) html += "<br><strong>Ã¢ÂÂ Ã¯Â¸Â Urgence:</strong> KritickÃÂ½ch a vysokÃÂ½ch ticketÃÂ¯ je <strong>" + critical + "</strong>." + (critical>5?" DoporuÃÂujeme prioritizovat.":"");
-  if (topReq) html += "<br><strong>&#x1F4E8; NejvÃÂ­ce poÃÂ¾adavkÃÂ¯ zadal/a:</strong> " + topReq[0] + " (" + topReq[1] + " ticketÃÂ¯).";
-  if (avgClose) html += "<br><strong>Ã¢ÂÂ± PrÃÂ¯mÃÂrnÃÂ¡ doba uzavÃÂenÃÂ­ HD ticketu:</strong> <strong>" + avgClose + " dnÃÂ­</strong>.";
+  if (critical>0) html += "<br><strong>⚠️ Urgence:</strong> Kritických a vysokých ticketů je <strong>" + critical + "</strong>." + (critical>5?" Doporučujeme prioritizovat.":"");
+  if (topReq) html += "<br><strong>&#x1F4E8; Nejvíce požadavků zadal/a:</strong> " + topReq[0] + " (" + topReq[1] + " ticketů).";
+  if (avgClose) html += "<br><strong>⏱ Průměrná doba uzavření HD ticketu:</strong> <strong>" + avgClose + " dní</strong>.";
   el.innerHTML = html;
 }
 
 function sprintQuarterFromPath(s) {
   const source = String(s.fullPath||s.id||s.name||"");
   const match = source.match(/\\(26Q\d)\\/i)||source.match(/\b(26Q\d)\b/i);
-  return match ? match[1].toUpperCase() : "OstatnÃÂ­";
+  return match ? match[1].toUpperCase() : "Ostatní";
 }
 
 function quarterSortValue(q) {
@@ -906,7 +906,7 @@ function quarterSortValue(q) {
 
 async function loadSprints() {
   const select = document.getElementById("sprintSelect");
-  select.innerHTML = '<option value="all">NaÃÂÃÂ­tÃÂ¡m...</option>';
+  select.innerHTML = '<option value="all">Načítám...</option>';
   const sprints = await DataSource.getSprints();
   const allOption = sprints.find(s=>s.id==="all");
   const realSprints = sprints.filter(s=>s.id!=="all");
@@ -954,7 +954,7 @@ async function loadData() {
     document.getElementById("lastUpdated").textContent = "Obnoveno: "+new Date().toLocaleTimeString("cs-CZ");
   } catch(e) {
     console.error(e);
-    document.getElementById("summaryText").innerHTML = '<span class="red">Chyba pÃÂi naÃÂÃÂ­tÃÂ¡nÃÂ­ dat: '+escapeHtml(e.message)+'</span>';
+    document.getElementById("summaryText").innerHTML = '<span class="red">Chyba při načítání dat: '+escapeHtml(e.message)+'</span>';
   } finally {
     setLoading(false);
   }
