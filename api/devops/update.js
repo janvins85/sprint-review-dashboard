@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const apiVersion = process.env.AZURE_DEVOPS_API_VERSION || '7.0';
 
   if (!pat || !org || !project) {
-    return res.status(500).json({ error: 'Chybí konfigurace Azure DevOps ve Vercel Environment Variables.' });
+    return res.status(500).json({ error: 'Chybi konfigurace Azure DevOps ve Vercel Environment Variables.' });
   }
 
   const auth = Buffer.from(':' + pat).toString('base64');
@@ -28,21 +28,26 @@ export default async function handler(req, res) {
 
   for (const id of ids) {
     try {
-      // First GET current tags for this work item
-      const getResp = await fetch(
-        `https://dev.azure.com/${org}/${project}/_apis/wit/workitems/${id}?fields=System.Tags,System.IterationPath&api-version=${apiVersion}`,
-        { headers: { Authorization: `Basic ${auth}` } }
-      );
+      // GET current fields
+      const getUrl = 'https://dev.azure.com/' + org + '/' + project + '/_apis/wit/workitems/' + id + '?fields=System.Tags,System.IterationPath&api-version=' + apiVersion;
+      const getResp = await fetch(getUrl, {
+        headers: { Authorization: 'Basic ' + auth, Accept: 'application/json' }
+      });
+
+      if (!getResp.ok) {
+        const getErr = await getResp.text();
+        errors.push({ id, step: 'GET', status: getResp.status, error: getErr.substring(0, 300) });
+        continue;
+      }
+
       const current = await getResp.json();
-      const currentTags = current.fields?.['System.Tags'] || '';
-      
-      // Build new tags - add carry-over if not already present
+      const currentTags = current.fields ? (current.fields['System.Tags'] || '') : '';
+
       let newTags = currentTags;
       if (addTag && !currentTags.toLowerCase().includes(addTag.toLowerCase())) {
         newTags = currentTags ? currentTags + '; ' + addTag : addTag;
       }
 
-      // Build patch operations
       const ops = [];
       if (iterationPath) {
         ops.push({ op: 'add', path: '/fields/System.IterationPath', value: iterationPath });
@@ -52,33 +57,34 @@ export default async function handler(req, res) {
       }
 
       if (ops.length === 0) {
-        results.push({ id, status: 'skipped', reason: 'no operations' });
+        results.push({ id, status: 'skipped' });
         continue;
       }
 
-      const patchResp = await fetch(
-        `https://dev.azure.com/${org}/${project}/_apis/wit/workitems/${id}?api-version=${apiVersion}`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Basic ${auth}`,
-            'Content-Type': 'application/json-patch+json'
-          },
-          body: JSON.stringify(ops)
-        }
-      );
+      const patchUrl = 'https://dev.azure.com/' + org + '/' + project + '/_apis/wit/workitems/' + id + '?api-version=' + apiVersion;
+      const patchResp = await fetch(patchUrl, {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Basic ' + auth,
+          'Content-Type': 'application/json-patch+json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(ops)
+      });
+
+      const patchText = await patchResp.text();
 
       if (patchResp.ok) {
-        const updated = await patchResp.json();
-        results.push({ id, status: 'ok', newIteration: updated.fields?.['System.IterationPath'], newTags: updated.fields?.['System.Tags'] });
+        let updated;
+        try { updated = JSON.parse(patchText); } catch { updated = {}; }
+        results.push({ id, status: 'ok', newIteration: updated.fields ? updated.fields['System.IterationPath'] : null, newTags: updated.fields ? updated.fields['System.Tags'] : null });
       } else {
-        const err = await patchResp.text();
-        errors.push({ id, status: patchResp.status, error: err.substring(0, 200) });
+        errors.push({ id, step: 'PATCH', status: patchResp.status, error: patchText.substring(0, 300) });
       }
     } catch (e) {
-      errors.push({ id, error: e.message });
+      errors.push({ id, step: 'catch', error: e.message });
     }
   }
 
-  return res.status(200).json({ updated: results.length, errors: errors.length, results, errors });
+  return res.status(200).json({ updated: results.length, errorsCount: errors.length, results, errors });
 }
