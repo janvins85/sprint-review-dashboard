@@ -8,6 +8,7 @@ export default async function handler(req, res) {
       const project = process.env.AZURE_DEVOPS_PROJECT;
       const apiVersion = process.env.AZURE_DEVOPS_API_VERSION || "7.1";
       const helpDeskParentId = Number(process.env.AZURE_DEVOPS_HELPDESK_PARENT_ID || 1513);
+          const team = process.env.AZURE_DEVOPS_TEAM || "PowerApps 2026";
 
   if (!pat || !org || !project) {
           return res.status(500).json({ error: "Chybí konfigurace Azure DevOps ve Vercel Environment Variables." });
@@ -143,6 +144,7 @@ export default async function handler(req, res) {
                                                     SELECT [System.Id]
                                                                 FROM WorkItems
                                                                             WHERE [System.TeamProject] = '${project}'
+                                                                                          AND [System.IterationPath] UNDER '${project}\\${team}'
                                                                                         ORDER BY [System.ChangedDate] DESC
                                                                                                   `
                           }),
