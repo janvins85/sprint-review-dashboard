@@ -8,6 +8,7 @@ export default async function handler(req, res) {
       const project = process.env.AZURE_DEVOPS_PROJECT;
       const apiVersion = process.env.AZURE_DEVOPS_API_VERSION || "7.1";
       const helpDeskParentId = Number(process.env.AZURE_DEVOPS_HELPDESK_PARENT_ID || 1513);
+          const iterationRoot = process.env.AZURE_DEVOPS_ITERATION_ROOT || "2026 Backlog PA";
           const team = process.env.AZURE_DEVOPS_TEAM || "PowerApps 2026";
 
   if (!pat || !org || !project) {
@@ -144,7 +145,7 @@ export default async function handler(req, res) {
                                                     SELECT [System.Id]
                                                                 FROM WorkItems
                                                                             WHERE [System.TeamProject] = '${project}'
-                                                                                          AND [System.IterationPath] UNDER '${project}\\${team}'
+                                                                                          AND [System.IterationPath] UNDER '${project}\\${iterationRoot}'
                                                                                         ORDER BY [System.ChangedDate] DESC
                                                                                                   `
                           }),
