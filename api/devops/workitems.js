@@ -146,6 +146,7 @@ export default async function handler(req, res) {
                                                                 FROM WorkItems
                                                                             WHERE [System.TeamProject] = '${project}'
                                                                                           AND [System.IterationPath] UNDER '${project}\\${iterationRoot}'
+                                                                                                        AND [System.AreaPath] NOT UNDER '${project}\\ROZ Dev'
                                                                                         ORDER BY [System.ChangedDate] DESC
                                                                                                   `
                           }),
