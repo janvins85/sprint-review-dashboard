@@ -815,8 +815,8 @@ function render() {
   const hdWithCategory = hd.filter(x=>x.hdCategory).length;
   const hdCoverage = hd.length ? Math.round(hdWithCategory/hd.length*100) : 0;
   const critical = hd.filter(x=>x.hdUrgency&&(x.hdUrgency.toLowerCase().includes("kritick")||x.hdUrgency.toLowerCase().includes("vysok"))).length;
-  const closedHD = hd.filter(x=>x.closedDate&&x.createdDate);
-  const avgClose = closedHD.length ? (closedHD.reduce((s,x)=>s+(daysBetween(x.createdDate,x.closedDate)||0),0)/closedHD.length).toFixed(1) : null;
+  const closedHDWithDates = hd.filter(x=>x.closedDate&&x.createdDate);
+  const avgClose = closedHDWithDates.length ? (closedHDWithDates.reduce((s,x)=>s+(daysBetween(x.createdDate,x.closedDate)||0),0)/closedHDWithDates.length).toFixed(1) : null;
 
   document.getElementById("kpiTotal").textContent = fmt(wi.length);
   document.getElementById("kpiHD").textContent = fmt(hd.length);
