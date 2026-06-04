@@ -16,11 +16,11 @@ body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-
 .header-right{text-align:right}.header-right strong{display:block;font-size:1.05rem;color:#fff}.header-right span{font-size:.8rem;color:#bfdbfe}
 .controls{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 select,input{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px}
-button{background:var(--blue);border:none;color:white;padding:9px 15px;border-radius:7px;cursor:pointer}button:hover{background:#2563eb}
+button{background:var(--blue);border:none;color:white;padding:9px 15px;border-radius:7px;cursor:pointer}button:hover{bahckground:#2563eb}
 .main{padding:24px 32px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:16px;text-align:center}
-.kpi .v{font-size:2rem;font-weight:800;line-height:1}.kpi .l{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-top:6px}.kpi .s{font-size:.75rem;color:var(--text2);margin-top:3px}
+.kpi .v{font-size:2rem;font-weight:800;line-height:1}.kpi .l{font-size:.72rem;color:var(--text2);text-transform:uppercahse;letter-spacing:.05em;margin-top:6px}.kpi .s{font-size:.75rem;color:var(--text2);margin-top:3px}
 .blue{color:var(--blue)}.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--red)}.purple{color:var(--purple)}.orange{color:var(--orange)}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:20px}
 .card-title{font-size:.85rem;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottomhh:14px}
@@ -88,7 +88,8 @@ td{padding:10px;border-bottom:1px solid rgba(45,49,73,.55);vertical-align:middle
   <div class="kpi"><div id="kpiTotal" class="v blue">--</div><div class="l">Celkem</div><div class="s">HD + pl&#225;n</div></div>
   <div class="kpi"><div id="kpiHD" class="v green">--</div><div class="l">Helpdesk</div><div class="s">z Power Apps / Flow</div></div>
   <div class="kpi"><div id="kpiPlanning" class="v orange">--</div><div class="l">Pl&#225;n</div><div class="s">ru&#269;n&#283; v DevOps</div></div>
-  <div class="kpi"><div id="kpiClosed" class="v green">--</div><div class="l">Uzav&#345;eno</div><div class="s" id="kpiClosedSub">--</div></div>
+  <div class="kpi"><div id="kpiClosedHD" class="v green">--</div><div class="l">Uzavřeno HD</div><div class="s" id="kpiClosedHDSub">--</div></div>
+  <div class="kpi"><div id="kpiClosedPlan" class="v" style="color:var(--teal)">--</div><div class="l">Uzavřeno Plán</div><div class="s" id="kpiClosedPlanSub">--</div></div>
   <div class="kpi"><div id="kpiActive" class="v yellow">--</div><div class="l">Prob&#237;h&#225;</div><div class="s">Active</div></div>
   <div class="kpi"><div id="kpiOpen" class="v red">--</div><div class="l">Otev&#345;eno</div><div class="s">New / To Do</div></div>
   <div class="kpi"><div id="kpiCarryOver" class="v" style="color:var(--orange)">--</div><div class="l">Z p&#345;edch. sprintu</div><div class="s">P&#345;esun z předchozího sprintu</div></div>
@@ -804,6 +805,8 @@ function render() {
   document.getElementById("generatedAt").textContent = "Generováno: " + new Date().toLocaleString("cs-CZ");
 
   const closed = wi.filter(x=>["Closed","Resolved"].includes(x.state)).length;
+  const closedHD = hd.filter(x=>["Closed","Resolved"].includes(x.state)).length;
+  const closedPlan = pl.filter(x=>["Closed","Resolved"].includes(x.state)).length;
   const active = wi.filter(x=>x.state==="Active").length;
   const open = wi.filter(x=>x.state==="New").length;
   const estimate = wi.reduce((s,x)=>s+(Number(x.estimatedHours)||0),0);
@@ -818,8 +821,10 @@ function render() {
   document.getElementById("kpiTotal").textContent = fmt(wi.length);
   document.getElementById("kpiHD").textContent = fmt(hd.length);
   document.getElementById("kpiPlanning").textContent = fmt(pl.length);
-  document.getElementById("kpiClosed").textContent = fmt(closed);
-  document.getElementById("kpiClosedSub").textContent = wi.length ? Math.round(closed/wi.length*100)+" % dokončeno" : "--";
+  document.getElementById("kpiClosedHD").textContent = fmt(closedHD);
+  document.getElementById("kpiClosedHDSub").textContent = hd.length ? Math.round(closedHD/hd.length*100)+" % HD" : "--";
+  document.getElementById("kpiClosedPlan").textContent = fmt(closedPlan);
+  document.getElementById("kpiClosedPlanSub").textContent = pl.length ? Math.round(closedPlan/pl.length*100)+" % Plán" : "--";
   document.getElementById("kpiActive").textContent = fmt(active);
   document.getElementById("kpiOpen").textContent = fmt(open);
   document.getElementById("kpiCarryOver").textContent = fmt(carryOverCount);
@@ -842,7 +847,7 @@ function render() {
       (hdCoverage < 70 ? ' <span style="color:var(--yellow)">⚠ Méně než 70 % pokrytí.</span>' : ' <span style="color:var(--green)">✓ Dobré pokrytí.</span>');
   }
 
-  renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, completed, carryOverCount, hdCoverage, critical, avgClose);
+  renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, completed, carryOverCount, hdCoverage, critical, avgClose, closedHD, closedPlan);
   const people = {};
   wi.forEach(x => people[x.assignee||"Nepřiřazeno"] = (people[x.assignee||"Nepřiřazeno"]||0)+1);
   renderCharts(wi, hd, pl, people);
@@ -851,7 +856,7 @@ function render() {
   renderHDCategoryDetail(hd);
 }
 
-function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, completed, carryOverCount, hdCoverage, critical, avgClose) {
+function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, completed, carryOverCount, hdCoverage, critical, avgClose, closedHD, closedPlan) {
   const hdPct = wi.length ? Math.round(hd.length/wi.length*100) : 0;
   const plPct = wi.length ? Math.round(pl.length/wi.length*100) : 0;
   const closedPct = wi.length ? Math.round(closed/wi.length*100) : 0;
@@ -872,7 +877,7 @@ function renderSummary(wi, hd, pl, sprint, closed, active, open, estimate, compl
   if (!el) return;
   let html = "<br>Ve sprintu <strong>" + (sprint.name||"--") + "</strong> je načteno <strong>" + wi.length + "</strong> DevOps ticketů. " +
     "Z toho <strong>" + hd.length + " (" + hdPct + " %)</strong> spada do Helpdesku a <strong>" + pl.length + " (" + plPct + " %)</strong> tvoří plánovaná práce.<br><br>";
-  html += "<strong>&#x1F4CC; Stavy:</strong> Uzavřeno je <strong>" + closed + " (" + closedPct + " %)</strong> položek, " +
+  html += "<strong>&#x1F4CC; Stavy:</strong> Uzavřeno <strong>" + closed + " (" + closedPct + " %)</strong> celkem (HD: <strong>" + closedHD + "</strong>, Plán: <strong>" + closedPlan + "</strong>), " +
     "aktivních je <strong>" + active + "</strong>, otevřených <strong>" + open + "</strong>. " +
     "Odhad: <strong>" + fmt(estimate,1) + " h</strong>, odpracováno: <strong>" + fmt(completed,1) + " h</strong>.";
   if (topP) html += "<br><br><strong>&#x1F464; Nejvytíženější:</strong> " + topP[0] + " má " + topP[1] + " ticketů.";
